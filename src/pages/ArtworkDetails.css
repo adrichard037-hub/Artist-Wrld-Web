@@ -1,0 +1,481 @@
+﻿.artwork-details-page {
+  min-height: 100vh;
+  background: #faf8f4;
+  color: #282622;
+}
+
+.artwork-details-header {
+  min-height: 82px;
+  padding: 18px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: #fff;
+  border-bottom: 1px solid #eae5dc;
+}
+
+.artwork-brand {
+  color: #282622;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.artwork-brand span {
+  color: #b7664b;
+}
+
+.artwork-details-nav,
+.artwork-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.artwork-details-nav a,
+.artwork-login-link {
+  color: #514d46;
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.artwork-details-nav a:hover,
+.artwork-login-link:hover {
+  color: #b7664b;
+}
+
+.artwork-button {
+  min-height: 46px;
+  padding: 13px 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.artwork-button-dark {
+  background: #292722;
+  color: #fff;
+}
+
+.artwork-button-dark:hover {
+  background: #b7664b;
+}
+
+.artwork-details-main {
+  width: min(1180px, 88%);
+  margin: 0 auto;
+  padding: 35px 0 70px;
+}
+
+.artwork-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 34px;
+  color: #898278;
+  font-size: 12px;
+}
+
+.artwork-breadcrumb a {
+  color: #686158;
+  text-decoration: none;
+}
+
+.artwork-breadcrumb a:hover {
+  color: #b7664b;
+}
+
+.artwork-details-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  align-items: start;
+  gap: clamp(35px, 6vw, 80px);
+}
+
+.artwork-image-column {
+  min-width: 0;
+}
+
+.artwork-main-image {
+  height: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #eee8df;
+}
+
+.artwork-main-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.artwork-image-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  color: #8b8276;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+}
+
+.artwork-information {
+  padding-top: 15px;
+}
+
+.artwork-information .eyebrow,
+.artwork-bottom-banner .eyebrow,
+.artwork-not-found .eyebrow {
+  margin: 0 0 15px;
+  color: #b7664b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.artwork-information h1,
+.artwork-not-found h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(36px, 4vw, 54px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -1.3px;
+}
+
+.artwork-artist-name {
+  margin: 17px 0 0;
+  color: #777066;
+  font-size: 14px;
+}
+
+.artwork-artist-name strong {
+  color: #39352f;
+  font-weight: 600;
+}
+
+.artwork-price {
+  margin-top: 28px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 29px;
+  font-weight: 600;
+}
+
+.artwork-description {
+  margin: 23px 0;
+  color: #6d675e;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.artwork-detail-divider {
+  height: 1px;
+  margin: 25px 0 12px;
+  background: #e4ded4;
+}
+
+.artwork-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eee9e1;
+  font-size: 12px;
+}
+
+.artwork-detail-row > span {
+  color: #827a70;
+}
+
+.artwork-detail-row strong {
+  color: #37332d;
+  font-weight: 600;
+  text-align: right;
+}
+
+.artwork-detail-row .artwork-availability {
+  color: #648365;
+}
+
+.artwork-purchase-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.artwork-add-cart {
+  width: 100%;
+  min-height: 52px;
+}
+
+.artwork-favorite-button {
+  width: 100%;
+  border-color: #d9d1c6;
+  background: transparent;
+  color: #38342e;
+}
+
+.artwork-favorite-button:hover,
+.artwork-favorite-button.is-favorite {
+  border-color: #b7664b;
+  color: #b7664b;
+}
+
+.artwork-feedback {
+  margin: 15px 0 0;
+  padding: 13px 15px;
+  border: 1px solid #d7e6d4;
+  background: #f0f6ee;
+  color: #456847;
+  font-size: 13px;
+}
+
+.artwork-demo-note {
+  margin-top: 22px;
+  color: #928a7f;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.artwork-back-link {
+  margin-top: 13px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6e665c;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.artwork-back-link:hover {
+  color: #b7664b;
+}
+
+.artwork-bottom-banner {
+  margin-top: 90px;
+  padding: 42px 45px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  background: #eee7dd;
+}
+
+.artwork-bottom-banner .eyebrow {
+  margin-bottom: 10px;
+}
+
+.artwork-bottom-banner h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(24px, 3vw, 35px);
+  font-weight: 500;
+}
+
+.artwork-bottom-banner p:not(.eyebrow) {
+  margin: 12px 0 0;
+  color: #71695f;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.artwork-button-light {
+  flex-shrink: 0;
+  background: #fff;
+  color: #302d27;
+}
+
+.artwork-button-light:hover {
+  background: #292722;
+  color: #fff;
+}
+
+.artwork-details-footer {
+  min-height: 100px;
+  padding: 25px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid #eae5dc;
+  background: #fff;
+}
+
+.artwork-details-footer .artwork-brand {
+  font-size: 19px;
+}
+
+.artwork-details-footer p,
+.artwork-details-footer > span {
+  color: #827a70;
+  font-size: 11px;
+}
+
+.artwork-not-found {
+  width: min(600px, 88%);
+  min-height: 70vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.artwork-not-found > p:not(.eyebrow) {
+  margin: 18px 0 25px;
+  color: #777066;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .artwork-details-header {
+    flex-wrap: wrap;
+  }
+
+  .artwork-details-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .artwork-main-image {
+    height: min(65vw, 560px);
+  }
+
+  .artwork-information {
+    padding-top: 10px;
+  }
+
+  .artwork-bottom-banner {
+    margin-top: 55px;
+  }
+}
+
+@media (max-width: 600px) {
+  .artwork-details-header {
+    padding: 17px 6%;
+    gap: 16px;
+  }
+
+  .artwork-brand {
+    font-size: 20px;
+  }
+
+  .artwork-details-nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .artwork-details-nav a {
+    font-size: 12px;
+  }
+
+  .artwork-header-actions {
+    gap: 12px;
+  }
+
+  .artwork-header-actions .artwork-button {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .artwork-details-main {
+    width: 88%;
+    padding-top: 25px;
+  }
+
+  .artwork-breadcrumb {
+    margin-bottom: 23px;
+    font-size: 11px;
+  }
+
+  .artwork-main-image {
+    height: 105vw;
+    max-height: 460px;
+  }
+
+  .artwork-image-caption {
+    font-size: 8px;
+    letter-spacing: 0.7px;
+  }
+
+  .artwork-information h1 {
+    font-size: 38px;
+  }
+
+  .artwork-bottom-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 30px 23px;
+  }
+
+  .artwork-details-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 25px 6%;
+  }
+
+  .artwork-details-footer p {
+    margin: 4px 0;
+  }
+}
+
+/* Shared Artist-Wrld logo styling */
+.brand,
+.auth-brand,
+.gallery-brand,
+.artwork-brand {
+display: inline-block;
+font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+font-size: 26px;
+font-weight: 700;
+letter-spacing: -1.5px;
+line-height: 1.2;
+color: #292821;
+text-decoration: none;
+white-space: nowrap;
+}
+
+.brand span:first-child,
+.auth-brand span,
+.gallery-brand span,
+.artwork-brand span {
+font-weight: 400;
+}
+
+.brand-dot,
+.auth-brand b,
+.gallery-brand b,
+.artwork-brand b {
+color: #bd6d4e;
+}
+
+
+
+/* Highlight Explore Art while viewing an artwork */
+.artwork-details-nav a.active {
+  color: #b7664b;
+  font-weight: 700;
+}

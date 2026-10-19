@@ -1,0 +1,49 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Local backups
+/.backups/
+/backups/
+/dashboard-*-backup-*/
+/dashboard-*-backup-*/
+
+
+# Backup files and folders anywhere in the project
+**/backups/
+*.bak
+*.backup
+*.backup-*
+*.known-good.bak
+*.damaged-*.bak
+*.before-*.bak
+*.report-backup-*
+*.security-report-backup-*
+*.symbols-backup-*
+

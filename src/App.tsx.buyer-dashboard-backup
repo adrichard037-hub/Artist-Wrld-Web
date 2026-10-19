@@ -1,0 +1,506 @@
+﻿import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, NavLink, Link, useNavigate, useLocation, useNavigationType } from 'react-router-dom'
+import Login from './pages/Login'
+import AdminDashboard from './pages/AdminDashboard'
+import ArtistDashboard from './pages/ArtistDashboard'
+import Register from './pages/Register'
+import ArtworkDetails from './pages/ArtworkDetails'
+import ArtworkGallery from './pages/ArtworkGallery'
+import ArtistProfile from './pages/ArtistProfile'
+import Artists from './pages/Artists'
+import About from './pages/About'
+import ScrollToTop from './components/ScrollToTop'
+import './App.css'
+
+const artworks = [
+  {
+    id: 1,
+    title: 'Quiet Horizons',
+    artist: 'Ama Mensah',
+    category: 'Paintings',
+    price: 'GH₵ 1,200',
+    image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 2,
+    title: 'Earth in Motion',
+    artist: 'Kojo Asante',
+    category: 'Abstract',
+    price: 'GH₵ 950',
+    image: 'https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 3,
+    title: 'The Blue Room',
+    artist: 'Abena Owusu',
+    category: 'Photography',
+    price: 'GH₵ 780',
+    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    id: 4,
+    title: 'Fragments of Light',
+    artist: 'Kwame Boateng',
+    category: 'Sculpture',
+    price: 'GH₵ 1,500',
+    image: 'https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=800&q=80',
+  },
+]
+
+const artists = [
+  {
+    name: 'Ama Mensah',
+    specialty: 'Contemporary painting',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    name: 'Kojo Asante',
+    specialty: 'Abstract art',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    name: 'Abena Owusu',
+    specialty: 'Photography and mixed media',
+    image: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=400&q=80',
+  },
+]
+
+function HomePage() {
+  const navigate = useNavigate()
+  const [favorites, setFavorites] = useState<number[]>([])
+  const [activeCategory, setActiveCategory] = useState('All')
+
+  const categories = ['All', 'Paintings', 'Photography', 'Abstract', 'Sculpture']
+
+  const filteredArtworks =
+    activeCategory === 'All'
+      ? artworks
+      : artworks.filter((artwork) => artwork.category === activeCategory)
+
+  function toggleFavorite(id: number) {
+    setFavorites((current) =>
+      current.includes(id)
+        ? current.filter((favoriteId) => favoriteId !== id)
+        : [...current, id],
+    )
+  }
+
+  return (
+    <div className="app">
+      <div className="announcement">
+        Discover original art. Support independent African artists.
+      </div>
+
+      <header className="navbar">
+        <a className="brand" href="#home">
+          artist<span>-wrld</span>
+          <span className="brand-dot">.</span>
+        </a>
+
+        <nav className="nav-links">
+          <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>Home</NavLink>
+          <NavLink to="/about" end className={({ isActive }) => isActive ? "active" : ""}>About</NavLink>
+          <NavLink to="/artworks" className={({ isActive }) => isActive || window.location.pathname.startsWith("/artworks/") ? "active" : ""}>Gallery</NavLink>
+          <NavLink to="/artists" end className={({ isActive }) => isActive ? "active" : ""}>Artists</NavLink>
+            </nav>
+
+        <div className="nav-actions">
+          <a className="login-link" href="/login">Log in</a>
+          <a className="button button-dark nav-join" href="/register">Join Artist-Wrld</a>
+        </div>
+      </header>
+
+      <main>
+        <section className="hero" id="home">
+          <div className="hero-content">
+            <span className="eyebrow">A WORLD OF CREATIVITY</span>
+            <h1>
+              Art that
+              <br />
+              moves <span>you.</span>
+            </h1>
+            <p>
+              Discover original artworks, meet extraordinary artists, and
+              bring creativity into your world.
+            </p>
+
+            <div className="hero-actions">
+              <a href="/artworks" className="button button-dark">
+                Gallery 
+              </a>
+              <a href="/register" className="button button-light">
+                Become an artist
+              </a>
+            </div>
+
+            <div className="hero-note">
+              <span className="note-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+              <span>A creative home for artists and art lovers.</span>
+            </div>
+          </div>
+
+          <div className="hero-visual">
+            <img
+              className="hero-image"
+              src="https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=1200&q=85"
+              alt="Colourful contemporary artwork"
+            />
+            <div className="floating-card">
+              <div className="floating-icon" aria-label="Artist palette and paintbrush" role="img">
+<svg viewBox="0 0 32 32" fill="none" stroke="#000000" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <path d="M16 3.5C8.8 3.5 3 8.9 3 15.5S8.5 27 15.5 27h2.2c2 0 3.3-1.4 3.3-3.1 0-1-.5-1.8-1.2-2.4-.6-.5-.8-1.2-.5-1.9.3-.8 1-1.2 2-1.2h2.2c3.3 0 5.5-2.3 5.5-5.3C29 7.8 23.1 3.5 16 3.5Z" />
+  <circle cx="10" cy="11" r="1.3" />
+  <circle cx="15.5" cy="8.5" r="1.3" />
+  <circle cx="21" cy="11" r="1.3" />
+  <circle cx="9" cy="17" r="1.3" />
+  <path d="m20 23 7-10.5c.5-.8 1.5-1 2.2-.5.7.4.9 1.3.5 2L23 25l-3 1 0-3Z" />
+</svg>
+</div>
+              <div>
+                <strong>Art with a story</strong>
+                <p>Created by independent artists</p>
+              </div>
+            </div>
+            <span className="hero-side-label">CREATIVITY WITHOUT BORDERS</span>
+          </div>
+        </section>
+
+        <section className="trust-strip">
+          <div><strong>Discover</strong><span>Unique original artworks</span></div>
+          <div><strong>Connect</strong><span>Meet creative minds</span></div>
+          <div><strong>Support</strong><span>Independent artists</span></div>
+          <div><strong>Collect</strong><span>Pieces that inspire you</span></div>
+        </section>
+
+        <section className="section categories-section" id="categories">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">FIND YOUR INSPIRATION</span>
+              <h2>Explore by category</h2>
+            </div>
+            <p>There is a story waiting in every form of art.</p>
+          </div>
+
+          <div className="category-grid">
+            <a
+              className="category-card category-painting"
+              href="/artworks?category=Paintings"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=700&q=80"
+                alt="Paintings"
+              />
+              <span className="category-overlay">
+                <span>01 / CANVAS</span>
+                <strong>Paintings</strong>
+                <span>Explore collection</span>
+              </span>
+            </a>
+
+            <a
+              className="category-card category-photo"
+              href="/artworks?category=Photography"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=700&q=80"
+                alt="Photography"
+              />
+              <span className="category-overlay">
+                <span>02 / PERSPECTIVE</span>
+                <strong>Photography</strong>
+                <span>Explore collection</span>
+              </span>
+            </a>
+
+            <a
+              className="category-card category-abstract"
+              href="/artworks?category=Abstract"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=700&q=80"
+                alt="Abstract art"
+              />
+              <span className="category-overlay">
+                <span>03 / EXPRESSION</span>
+                <strong>Abstract</strong>
+                <span>Explore collection</span>
+              </span>
+            </a>
+
+            <a
+              className="category-card category-sculpture"
+              href="/artworks?category=Sculpture"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=700&q=80"
+                alt="Sculpture and mixed media"
+              />
+              <span className="category-overlay">
+                <span>04 / FORM</span>
+                <strong>Sculpture &amp; more</strong>
+                <span>Explore collection</span>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section className="section artworks-section" id="explore">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">HANDPICKED FOR YOU</span>
+              <h2>Art worth discovering<span className="heading-dot">.</span></h2>
+            </div>
+            <a className="text-link" href="/artworks">Discover all art</a>
+          </div>
+
+          <div className="filter-row">
+            {categories.map((category) => (
+              <button
+                key={category}
+                className={`filter-button ${activeCategory === category ? 'active' : ''}`}
+                onClick={() => setActiveCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="artwork-grid">
+            {filteredArtworks.map((artwork) => (
+              <article className="artwork-card" key={artwork.id}>
+                <div className="artwork-image-wrap">
+                  <img
+                    src={artwork.image}
+                    alt={artwork.title}
+                    className="artwork-image"
+                  />
+
+                  <button
+                    className={`favorite-button ${favorites.includes(artwork.id) ? 'favorited' : ''}`}
+                    onClick={() => toggleFavorite(artwork.id)}
+                    aria-label={
+                      favorites.includes(artwork.id)
+                        ? 'Remove from favorites'
+                        : 'Add to favorites'
+                    }
+                    aria-pressed={favorites.includes(artwork.id)}
+                  >
+                    {favorites.includes(artwork.id) ? '\u2665' : '\u2661'}
+                  </button>
+
+                  <span className="artwork-category">{artwork.category}</span>
+                </div>
+
+                <div className="artwork-info">
+                  <div>
+                    <h3>{artwork.title}</h3>
+                    <p>By {artwork.artist}</p>
+                  </div>
+                  <strong>{artwork.price}</strong>
+                </div>
+
+                <button
+                  className="view-art-button"
+                  onClick={() => navigate(`/artworks/${artwork.id}`)}
+                >
+                  View artwork
+                </button>
+              </article>
+            ))}
+          </div>
+
+          {filteredArtworks.length === 0 && (
+            <p className="empty-state">No artworks in this category yet.</p>
+          )}
+        </section>
+
+        <section className="artist-section" id="artists">
+          <div className="section artist-section-inner">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">THE PEOPLE BEHIND THE ART</span>
+                <h2>Meet the artists</h2>
+              </div>
+              <Link className="text-link" to="/artists">Meet our community</Link>
+            </div>
+
+            <div className="artist-grid">
+              {artists.map((artist, index) => (
+                <article className="artist-card" key={artist.name}>
+                  <div className="artist-photo-wrap">
+                    <img src={artist.image} alt={artist.name} />
+                    <span className="artist-number">0{index + 1}</span>
+                  </div>
+                  <h3>{artist.name}</h3>
+                  <p>{artist.specialty}</p>
+                  <Link
+                    to={`/artists/${artist.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="artist-link"
+                  >
+                    View artist profile
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="join-section" id="join">
+          <div className="join-decoration" aria-label="Art tools" role="img">✏️ 🖌️ 🎨</div>
+          <div className="join-content">
+            <span className="eyebrow">YOUR CREATIVITY BELONGS HERE</span>
+            <h2>Make room for<br />something <em>extraordinary.</em></h2>
+            <p>
+              Whether you create art or collect it, there is a place for you here.
+            </p>
+            <div className="hero-actions">
+              <a href="/register" className="button button-cream">
+                Join the community
+              </a>
+              <a href="/artworks" className="button button-outline">
+                Discover art
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="footer" id="login">
+        <div className="footer-top">
+          <div className="footer-brand">
+            <a className="brand" href="#home">
+              artist<span>-wrld</span><span className="brand-dot">.</span>
+            </a>
+            <p>
+              A home for creativity, culture, and the people who make art matter.
+            </p>
+          </div>
+
+          <div className="footer-column">
+            <strong>Discover</strong>
+            <Link to="/artworks">Gallery</Link>
+            <Link to="/artists">Artists</Link>
+                </div>
+
+          <div className="footer-column">
+            <strong>Community</strong>
+            <a href="/register">Become an artist</a>
+            <a href="/register">Become a collector</a>
+            <Link to="/about">Our story</Link>
+          </div>
+
+          <div className="footer-column">
+            <strong>Account</strong>
+            <a href="/login">Log in</a>
+            <a href="/register">Create an account</a>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <span>© 2026 Artist-Wrld. Made for the love of art.</span>
+          <span>Created with creativity in mind</span>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
+function PreviousRouteTracker() {
+  const location = useLocation()
+  const navigationType = useNavigationType()
+
+  useEffect(() => {
+    const current = location.pathname + location.search
+    const storageKey = 'artist-wrld-route-stack'
+
+    let stack: string[] = []
+
+    try {
+      const saved = sessionStorage.getItem(storageKey)
+      stack = saved ? JSON.parse(saved) : []
+      if (!Array.isArray(stack)) stack = []
+    } catch {
+      stack = []
+    }
+
+    if (location.pathname === '/register') {
+      const previousRoute = stack.length > 0 ? stack[stack.length - 1] : ''
+
+      if (
+        previousRoute &&
+        previousRoute !== '/register' &&
+        !previousRoute.startsWith('/register?')
+      ) {
+        sessionStorage.setItem('artist-wrld-register-return', previousRoute)
+      }
+    }
+    if (navigationType === 'POP') {
+      const existingIndex = stack.lastIndexOf(current)
+
+      if (existingIndex >= 0) {
+        stack = stack.slice(0, existingIndex + 1)
+      } else {
+        stack.push(current)
+      }
+    } else if (navigationType === 'REPLACE') {
+      if (stack.length > 0) {
+        stack[stack.length - 1] = current
+      } else {
+        stack = [current]
+      }
+    } else {
+      if (stack[stack.length - 1] !== current) {
+        stack.push(current)
+      }
+    }
+
+    sessionStorage.setItem(storageKey, JSON.stringify(stack))
+  }, [location.pathname, location.search, navigationType])
+
+  return null
+}
+function App() {
+  return (
+    <BrowserRouter>
+            <PreviousRouteTracker />
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/artist-dashboard" element={<ArtistDashboard />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/artworks" element={<ArtworkGallery />} />
+        <Route path="/artworks/:id" element={<ArtworkDetails />} />
+        <Route path="/artists" element={<Artists />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/artists/:slug" element={<ArtistProfile />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+export default App
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
