@@ -16,7 +16,7 @@ import About from './pages/About'
 import ScrollToTop from './components/ScrollToTop'
 import './App.css'
 
-const API_URL = 'http://localhost:4000/api'
+const API_URL = 'https://artist-wrld-backend.onrender.com/api'
 
 type HomepageRole = 'ADMIN' | 'ARTIST' | 'BUYER'
 
@@ -947,7 +947,7 @@ function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
 
     async function checkSession() {
       try {
-        const response = await fetch('http://localhost:4000/api/auth/me', {
+        const response = await fetch('https://artist-wrld-backend.onrender.com/api/auth/me', {
           method: 'GET',
           credentials: 'include',
           headers: {

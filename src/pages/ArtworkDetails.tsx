@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
 import './ArtworkDetails.css'
 
-const API_URL = 'http://localhost:4000/api'
+const API_URL = 'https://artist-wrld-backend.onrender.com/api'
 
 type Artwork = {
   id: string

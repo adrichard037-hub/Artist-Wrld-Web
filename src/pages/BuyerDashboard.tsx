@@ -137,7 +137,7 @@ function BuyerDashboard() {
 
     async function loadAuthenticatedAccountName() {
       try {
-        const response = await fetch("http://localhost:4000/api/auth/me", {
+        const response = await fetch("https://artist-wrld-backend.onrender.com/api/auth/me", {
           method: "GET",
           credentials: "include",
           headers: { Accept: "application/json" },
@@ -170,7 +170,7 @@ function BuyerDashboard() {
 
     async function loadBuyerProfile() {
       try {
-        const response = await fetch("http://localhost:4000/api/dashboard/profile", {
+        const response = await fetch("https://artist-wrld-backend.onrender.com/api/dashboard/profile", {
           method: "GET",
           credentials: "include",
           headers: { Accept: "application/json" },
@@ -488,7 +488,7 @@ function BuyerDashboard() {
     }
 
     try {
-      const response = await fetch("http://localhost:4000/api/dashboard/profile", {
+      const response = await fetch("https://artist-wrld-backend.onrender.com/api/dashboard/profile", {
         method: "PUT",
         credentials: "include",
         headers: {

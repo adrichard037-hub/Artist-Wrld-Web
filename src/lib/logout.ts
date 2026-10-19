@@ -1,6 +1,6 @@
-﻿export async function logoutToLogin(): Promise<void> {
+export async function logoutToLogin(): Promise<void> {
   try {
-    await fetch('http://localhost:4000/api/auth/logout', {
+    await fetch('https://artist-wrld-backend.onrender.com/api/auth/logout', {
       method: 'POST',
       credentials: 'include',
       headers: {

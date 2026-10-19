@@ -48,7 +48,7 @@ function ArtistProfile() {
         setError('')
 
         const response = await fetch(
-          `http://localhost:4000/api/artists/public/${encodeURIComponent(artistSlug)}`,
+          `https://artist-wrld-backend.onrender.com/api/artists/public/${encodeURIComponent(artistSlug)}`,
           { signal: controller.signal },
         )
 

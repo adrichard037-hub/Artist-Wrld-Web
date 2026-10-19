@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import './DeliveryDashboard.css'
 
-const API_BASE_URL = 'http://localhost:4000/api'
+const API_BASE_URL = 'https://artist-wrld-backend.onrender.com/api'
 
 type ApiAssignment = {
   id: string

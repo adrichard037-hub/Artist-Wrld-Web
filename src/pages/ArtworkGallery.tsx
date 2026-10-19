@@ -3,7 +3,7 @@ import { Link, NavLink, useSearchParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
 import './ArtworkGallery.css'
 
-const API_URL = 'http://localhost:4000/api'
+const API_URL = 'https://artist-wrld-backend.onrender.com/api'
 
 type Artwork = {
   id: string

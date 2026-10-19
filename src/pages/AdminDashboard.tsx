@@ -24,7 +24,7 @@ type DeletedUserAudit = {
   reason: string
 }
 
-const ADMIN_API_URL = 'http://localhost:4000/api/admin'
+const ADMIN_API_URL = 'https://artist-wrld-backend.onrender.com/api/admin'
 
 type AdminArtwork = {
   id: string
@@ -266,7 +266,7 @@ function AdminDashboard() {
       setArtworksMessage('')
 
       try {
-        const response = await fetch('http://localhost:4000/api/artworks', {
+        const response = await fetch('https://artist-wrld-backend.onrender.com/api/artworks', {
           method: 'GET',
           credentials: 'include',
           cache: 'no-store',

@@ -1,8 +1,8 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Auth.css'
 
-const API_URL = 'http://localhost:4000/api/auth'
+const API_URL = 'https://artist-wrld-backend.onrender.com/api/auth'
 
 type LoginResponse = {
   message?: string
@@ -139,7 +139,7 @@ function Login() {
         </div>
 
         <p className="auth-visual-footer">
-          © 2026 Artist-Wrld. Made for the love of art.
+          � 2026 Artist-Wrld. Made for the love of art.
         </p>
       </section>
 

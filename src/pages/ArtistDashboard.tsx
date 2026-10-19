@@ -1,4 +1,4 @@
-﻿import { logoutToLogin } from '../lib/logout'
+import { logoutToLogin } from '../lib/logout'
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './ArtistDashboard.css'
@@ -77,7 +77,7 @@ const formatMoney = (amount: number) =>
   `GH\u20B5 ${amount.toLocaleString('en-GH', { maximumFractionDigits: 2 })}`
 
 function ArtistDashboard() {
-  const api = "http://localhost:4000/api";
+  const api = "https://artist-wrld-backend.onrender.com/api";
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -444,7 +444,7 @@ function ArtistDashboard() {
     }
 
     try {
-      const response = await fetch("http://localhost:4000/api/artworks", {
+      const response = await fetch("https://artist-wrld-backend.onrender.com/api/artworks", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -509,7 +509,7 @@ function ArtistDashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/artworks/${encodeURIComponent(id)}`,
+        `https://artist-wrld-backend.onrender.com/api/artworks/${encodeURIComponent(id)}`,
         {
           method: "PATCH",
           credentials: "include",
@@ -549,7 +549,7 @@ function ArtistDashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/artworks/${encodeURIComponent(id)}`,
+        `https://artist-wrld-backend.onrender.com/api/artworks/${encodeURIComponent(id)}`,
         {
           method: "DELETE",
           credentials: "include",
