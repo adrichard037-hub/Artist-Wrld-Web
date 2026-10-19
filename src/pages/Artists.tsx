@@ -152,7 +152,7 @@ function Artists() {
         <Link to="/" className="artists-brand">
           artist<span>-wrld</span><b>.</b>
         </Link>
-        <span>© 2026 Artist-Wrld. Made for the love of art.</span>
+        <span>Â© 2026 Artist-Wrld. Made for the love of art.</span>
       </footer>
     </main>
   )

@@ -139,7 +139,7 @@ function Login() {
         </div>
 
         <p className="auth-visual-footer">
-          © 2026 Artist-Wrld. Made for the love of art.
+          Â© 2026 Artist-Wrld. Made for the love of art.
         </p>
       </section>
 
