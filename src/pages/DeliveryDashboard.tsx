@@ -1,9 +1,10 @@
 import { logoutToLogin } from '../lib/logout'
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { API_URL } from '../lib/api'
 import './DeliveryDashboard.css'
 
-const API_BASE_URL = 'https://artist-wrld-backend.onrender.com/api'
+const API_BASE_URL = API_URL
 
 type ApiAssignment = {
   id: string
@@ -40,14 +41,14 @@ function normalizeDeliveryStatus(value: string): Delivery['status'] {
 
 type Section =
   | 'Overview'
-  | 'My Deliveries'
-  | 'Pickup & Drop-off'
-  | 'Delivery History'
+  | 'All Deliveries'
+  | 'Awaiting Pickup'
+  | 'In Transit'
+  | 'Completed'
   | 'Messages'
   | 'My Profile'
   | 'Settings'
   | 'Backup & Restore'
-
 type Theme = 'Light' | 'Dark' | 'System'
 
 type Delivery = {
@@ -77,15 +78,71 @@ type DeliveryBackup = {
   theme: Theme
 }
 
+type WorkspaceMessage = {
+  id: string
+  senderId: string
+  recipientId: string
+  subject: string
+  body: string
+  readAt: string | null
+  createdAt: string
+}
+
+type BackupSnapshot = {
+  id: string
+  format: string
+  createdAt: string
+}
+
+async function fetchWorkspaceMessages(): Promise<WorkspaceMessage[]> {
+  const response = await fetch(`${API_BASE_URL}/workspace/messages`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!response.ok) throw new Error(await getApiError(response))
+
+  const payload = await response.json() as {
+    messages?: WorkspaceMessage[]
+  }
+
+  if (!Array.isArray(payload.messages)) {
+    throw new Error('The server returned an invalid messages response.')
+  }
+
+  return payload.messages
+}
+
+async function fetchBackupSnapshots(): Promise<BackupSnapshot[]> {
+  const response = await fetch(`${API_BASE_URL}/workspace/backups`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!response.ok) throw new Error(await getApiError(response))
+
+  const payload = await response.json() as {
+    snapshots?: BackupSnapshot[]
+  }
+
+  if (!Array.isArray(payload.snapshots)) {
+    throw new Error('The server returned an invalid backup list.')
+  }
+
+  return payload.snapshots
+}
+
 const navigation: Section[] = [
   'Overview',
-  'My Deliveries',
-  'Pickup & Drop-off',
-  'Delivery History',
+  'All Deliveries',
+  'Awaiting Pickup',
+  'In Transit',
+  'Completed',
   'Messages',
   'My Profile',
   'Settings',
-  'Backup & Restore',
 ]
 
 const emptyProfile: Profile = {
@@ -164,7 +221,7 @@ function DeliveryDashboard() {
   const profileImageInput = useRef<HTMLInputElement>(null)
 
   const sectionFromUrl = (value: string | null): Section =>
-    navigation.find(
+    ([...navigation, 'Backup & Restore'] as Section[]).find(
       (item) =>
         item.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '-') === value,
     ) ?? 'Overview'
@@ -175,6 +232,23 @@ function DeliveryDashboard() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
   const [notice, setNotice] = useState('')
   const [restoreError, setRestoreError] = useState('')
+
+  const [userId, setUserId] = useState('')
+  const [messages, setMessages] = useState<WorkspaceMessage[]>([])
+  const [recipientId, setRecipientId] = useState('')
+  const [messageSubject, setMessageSubject] = useState('')
+  const [messageBody, setMessageBody] = useState('')
+  const [messagesLoaded, setMessagesLoaded] = useState(false)
+  const [messageBusy, setMessageBusy] = useState(false)
+  const [messageError, setMessageError] = useState('')
+
+  const [snapshots, setSnapshots] = useState<BackupSnapshot[]>([])
+  const [snapshotsLoaded, setSnapshotsLoaded] = useState(false)
+  const [backupBusy, setBackupBusy] = useState(false)
+  const [backupError, setBackupError] = useState('')
+
+  const messagesLoading = section === 'Messages' && !messagesLoaded
+  const snapshotsLoading = section === 'Backup & Restore' && !snapshotsLoaded
 
   useEffect(() => {
     let active = true
@@ -265,7 +339,7 @@ function DeliveryDashboard() {
         }
 
         const payload = await response.json() as {
-          user?: { fullName?: string; email?: string }
+          user?: { id?: string; fullName?: string; email?: string }
           profile?: {
             phone?: string | null
             serviceArea?: string | null
@@ -277,6 +351,8 @@ function DeliveryDashboard() {
         if (!payload.user) {
           throw new Error('The server returned an invalid profile.')
         }
+
+        setUserId(payload.user.id ?? '')
 
         setProfile({
           fullName: payload.user.fullName ?? '',
@@ -387,9 +463,300 @@ function DeliveryDashboard() {
       )
     }
   }
+  async function loadMessages() {
+    try {
+      setMessages(await fetchWorkspaceMessages())
+      setMessageError('')
+    } catch (error) {
+      setMessageError(
+        error instanceof Error ? error.message : 'Unable to load messages.',
+      )
+    } finally {
+      setMessagesLoaded(true)
+    }
+  }
+
+  async function sendWorkspaceMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setMessageError('')
+    setNotice('')
+
+    const cleanRecipient = recipientId.trim()
+    const cleanSubject = messageSubject.trim()
+    const cleanBody = messageBody.trim()
+
+    if (!cleanRecipient || !cleanSubject || !cleanBody) {
+      setMessageError('Enter a recipient account ID, subject, and message.')
+      return
+    }
+
+    if (cleanSubject.length > 200 || cleanBody.length > 10000) {
+      setMessageError('The subject limit is 200 characters; the message limit is 10,000.')
+      return
+    }
+
+    if (cleanRecipient === userId) {
+      setMessageError('You cannot send a message to your own account.')
+      return
+    }
+
+    setMessageBusy(true)
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspace/messages`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientId: cleanRecipient,
+          subject: cleanSubject,
+          body: cleanBody,
+        }),
+      })
+
+      if (!response.ok) throw new Error(await getApiError(response))
+
+      setMessageSubject('')
+      setMessageBody('')
+      setNotice('Message sent successfully.')
+      setMessagesLoaded(false)
+      await loadMessages()
+    } catch (error) {
+      setMessageError(
+        error instanceof Error ? error.message : 'Unable to send the message.',
+      )
+    } finally {
+      setMessageBusy(false)
+    }
+  }
+
+  async function markWorkspaceMessageRead(messageId: string) {
+    setMessageError('')
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/workspace/messages/${encodeURIComponent(messageId)}/read`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+        },
+      )
+
+      if (!response.ok) throw new Error(await getApiError(response))
+
+      const payload = await response.json() as { item?: WorkspaceMessage }
+
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === messageId
+            ? {
+                ...item,
+                readAt: payload.item?.readAt ?? new Date().toISOString(),
+              }
+            : item,
+        ),
+      )
+    } catch (error) {
+      setMessageError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to mark the message as read.',
+      )
+    }
+  }
+
+  async function loadBackupSnapshots() {
+    try {
+      setSnapshots(await fetchBackupSnapshots())
+      setBackupError('')
+    } catch (error) {
+      setBackupError(
+        error instanceof Error ? error.message : 'Unable to load saved backups.',
+      )
+    } finally {
+      setSnapshotsLoaded(true)
+    }
+  }
+
+  async function createServerBackup() {
+    setBackupBusy(true)
+    setBackupError('')
+    setNotice('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspace/backup`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) throw new Error(await getApiError(response))
+
+      const payload = await response.json() as { message?: string }
+
+      setNotice(payload.message || 'Server backup created successfully.')
+      setSnapshotsLoaded(false)
+      await loadBackupSnapshots()
+    } catch (error) {
+      setBackupError(
+        error instanceof Error ? error.message : 'Unable to create a server backup.',
+      )
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  async function restoreServerBackup(snapshot: BackupSnapshot) {
+    if (!window.confirm(
+      'Restore this server backup? Existing records will not be overwritten.',
+    )) return
+
+    setBackupBusy(true)
+    setBackupError('')
+    setNotice('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspace/restore`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ snapshotId: snapshot.id }),
+      })
+
+      if (!response.ok) throw new Error(await getApiError(response))
+
+      const payload = await response.json() as { message?: string }
+
+      setNotice(
+        payload.message ||
+        'Restore completed. Existing records were not overwritten.',
+      )
+
+      setSnapshotsLoaded(false)
+      await Promise.all([
+        loadBackupSnapshots(),
+        loadDeliveryAssignments(() => true, setDeliveries, setNotice),
+      ])
+    } catch (error) {
+      setBackupError(
+        error instanceof Error ? error.message : 'Unable to restore this backup.',
+      )
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  async function deleteServerBackup(snapshot: BackupSnapshot) {
+    if (!window.confirm('Permanently delete this saved server backup?')) return
+
+    setBackupBusy(true)
+    setBackupError('')
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/workspace/backups/${encodeURIComponent(snapshot.id)}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+        },
+      )
+
+      if (!response.ok) throw new Error(await getApiError(response))
+
+      setSnapshots((current) =>
+        current.filter((item) => item.id !== snapshot.id),
+      )
+      setNotice('Server backup deleted successfully.')
+    } catch (error) {
+      setBackupError(
+        error instanceof Error ? error.message : 'Unable to delete this backup.',
+      )
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  useEffect(() => {
+    if (section !== 'Messages') return
+
+    let active = true
+
+    void fetchWorkspaceMessages()
+      .then((items) => {
+        if (active) {
+          setMessages(items)
+          setMessageError('')
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setMessageError(
+            error instanceof Error ? error.message : 'Unable to load messages.',
+          )
+        }
+      })
+      .finally(() => {
+        if (active) setMessagesLoaded(true)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [section])
+
+  useEffect(() => {
+    if (section !== 'Backup & Restore') return
+
+    let active = true
+
+    void fetchBackupSnapshots()
+      .then((items) => {
+        if (active) {
+          setSnapshots(items)
+          setBackupError('')
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setBackupError(
+            error instanceof Error
+              ? error.message
+              : 'Unable to load saved backups.',
+          )
+        }
+      })
+      .finally(() => {
+        if (active) setSnapshotsLoaded(true)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [section])
+
   function setSection(nextSection: Section) {
     setNotice('')
     setRestoreError('')
+
+    if (nextSection !== section && nextSection === 'Messages') {
+      setMessagesLoaded(false)
+    } else if (
+      nextSection !== section &&
+      nextSection === 'Backup & Restore'
+    ) {
+      setSnapshotsLoaded(false)
+    }
 
     const slug = nextSection.toLowerCase()
       .replace(/&/g, 'and')
@@ -404,9 +771,6 @@ function DeliveryDashboard() {
     }
   }
 
-  const activeDeliveries = deliveries.filter(
-    (delivery) => delivery.status !== 'Delivered',
-  )
   const completedDeliveries = deliveries.filter(
     (delivery) => delivery.status === 'Delivered',
   )
@@ -617,7 +981,7 @@ function DeliveryDashboard() {
           <button
             type="button"
             className="delivery-primary-button"
-            onClick={() => setSection('My Deliveries')}
+            onClick={() => setSection('Awaiting Pickup')}
           >
             View deliveries &rarr;
           </button>
@@ -655,7 +1019,7 @@ function DeliveryDashboard() {
             <button
               type="button"
               className="delivery-text-button"
-              onClick={() => setSection('My Deliveries')}
+              onClick={() => setSection('Awaiting Pickup')}
             >
               View all
             </button>
@@ -676,60 +1040,92 @@ function DeliveryDashboard() {
     )
   }
 
-  function renderDeliveryTable(items: Delivery[]) {
+  function renderDeliveryCards(items: Delivery[]) {
     if (items.length === 0) {
       return (
-        <div className="delivery-empty">
-          <strong>No deliveries to show</strong>
-          <p>Assigned delivery records will appear here when available.</p>
+        <div className="delivery-empty delivery-cards-empty">
+          <span className="delivery-cards-empty-icon" aria-hidden="true">&#x25C7;</span>
+          <strong>You're all caught up</strong>
+          <p>New delivery assignments will appear here when they are assigned to you.</p>
         </div>
       )
     }
 
     return (
-      <div className="delivery-table-wrap">
-        <table className="delivery-table">
-          <thead>
-            <tr>
-              <th>Delivery</th>
-              <th>Customer</th>
-              <th>Destination</th>
-              <th>Status</th>
-              <th>Update status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((delivery) => (
-              <tr key={delivery.id}>
-                <td>
-                  <strong>{delivery.artwork}</strong>
-                  <small>{delivery.id} &middot; {delivery.date}</small>
-                </td>
-                <td>{delivery.customer}</td>
-                <td>{delivery.destination}</td>
-                <td><StatusBadge status={delivery.status} /></td>
-                <td>
-                  {delivery.status === 'Delivered' ? (
-                    <span className="delivery-muted-text">Completed</span>
-                  ) : (
-                    <select
-                      aria-label={`Update status for ${delivery.id}`}
-                      value={delivery.status}
-                      onChange={(event) =>
-                        updateDeliveryStatus(delivery.id, event.target.value as Delivery['status'])
-                      }
-                    >
-                      <option value="Assigned">Assigned</option>
-                      <option value="Picked Up">Picked Up</option>
-                      <option value="In Transit">In Transit</option>
-                      <option value="Delivered">Delivered</option>
-                    </select>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="delivery-cards-grid">
+        {items.map((delivery) => (
+          <article className="delivery-work-card" key={delivery.id}>
+            <div className="delivery-work-card-top">
+              <span className="delivery-work-card-reference">
+                DELIVERY / {delivery.id}
+              </span>
+              <StatusBadge status={delivery.status} />
+            </div>
+
+            <div className="delivery-work-card-artwork">
+              <span className="delivery-work-card-artwork-icon" aria-hidden="true">
+                &#x25C7;
+              </span>
+              <div>
+                <span className="delivery-work-card-label">ARTWORK</span>
+                <h3>{delivery.artwork}</h3>
+              </div>
+            </div>
+
+            <div className="delivery-work-card-details">
+              <div>
+                <span className="delivery-work-card-label">CUSTOMER</span>
+                <strong>{delivery.customer}</strong>
+              </div>
+              <div>
+                <span className="delivery-work-card-label">DESTINATION</span>
+                <strong>{delivery.destination}</strong>
+              </div>
+              <div>
+                <span className="delivery-work-card-label">SCHEDULED DATE</span>
+                <strong>{delivery.date}</strong>
+              </div>
+            </div>
+
+            <div className="delivery-work-card-footer">
+              <div className="delivery-work-card-progress">
+                <span className={`delivery-work-card-progress-dot ${delivery.status === 'Delivered' ? 'is-complete' : ''}`} />
+                <span>
+                  {delivery.status === 'Delivered'
+                    ? 'Delivery completed'
+                    : delivery.status === 'In Transit'
+                      ? 'On the way to destination'
+                      : delivery.status === 'Picked Up'
+                        ? 'Artwork collected'
+                        : 'Awaiting collection'}
+                </span>
+              </div>
+
+              <label className="delivery-work-card-status-control">
+                <span>UPDATE STATUS</span>
+                {delivery.status === 'Delivered' ? (
+                  <strong className="delivery-work-card-completed">Completed &#x2713;</strong>
+                ) : (
+                  <select
+                    aria-label={`Update status for ${delivery.id}`}
+                    value={delivery.status}
+                    onChange={(event) =>
+                      updateDeliveryStatus(
+                        delivery.id,
+                        event.target.value as Delivery['status']
+                      )
+                    }
+                  >
+                    <option value="Assigned">Assigned</option>
+                    <option value="Picked Up">Picked Up</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                )}
+              </label>
+            </div>
+          </article>
+        ))}
       </div>
     )
   }
@@ -851,7 +1247,7 @@ function DeliveryDashboard() {
           <div className="delivery-form-actions">
             <button className="delivery-primary-button" type="submit">Save profile</button>
           </div>
-          <p className="delivery-form-note">This prototype stores changes in the current dashboard session. Persistent account updates require the backend.</p>
+          <p className="delivery-form-note">Your profile changes are submitted to your Artist-Wrld account when you save.</p>
         </form>
       </section>
     )
@@ -888,7 +1284,7 @@ function DeliveryDashboard() {
               <strong>Delivery assignments</strong>
               <p>View and update the status of your assigned deliveries.</p>
             </div>
-            <button type="button" className="delivery-secondary-button" onClick={() => setSection('My Deliveries')}>
+            <button type="button" className="delivery-secondary-button" onClick={() => setSection('Awaiting Pickup')}>
               View deliveries
             </button>
           </div>
@@ -912,16 +1308,78 @@ function DeliveryDashboard() {
         <section className="delivery-page-intro">
           <span className="delivery-eyebrow">YOUR DATA</span>
           <h2>Backup &amp; Restore</h2>
-          <p>Keep a copy of your personal delivery workspace settings.</p>
+          <p>Manage secure server snapshots alongside your personal settings backup.</p>
+        </section>
+
+        <section className="delivery-panel delivery-server-backup">
+          <div className="delivery-panel-heading">
+            <div>
+              <h3>Workspace backup</h3>
+              <p>Create a server-side snapshot of the delivery workspace data supported by your account.</p>
+            </div>
+            <button
+              type="button"
+              className="delivery-primary-button"
+              onClick={() => void createServerBackup()}
+              disabled={backupBusy}
+            >
+              {backupBusy ? 'Please waitâ€¦' : 'Create server backup'}
+            </button>
+          </div>
+
+          {backupError && <div className="delivery-error" role="alert">{backupError}</div>}
+
+          <div className="delivery-snapshot-list">
+            {snapshotsLoading ? (
+              <div className="delivery-empty">
+                <p>Loading saved backupsâ€¦</p>
+              </div>
+            ) : snapshots.length === 0 ? (
+              <div className="delivery-empty">
+                <strong>No server backups yet</strong>
+                <p>Create a backup to see it listed here.</p>
+              </div>
+            ) : (
+              snapshots.map((snapshot) => (
+                <article className="delivery-snapshot-row" key={snapshot.id}>
+                  <div className="delivery-snapshot-details">
+                    <strong>Workspace snapshot</strong>
+                    <span>
+                      Created {new Date(snapshot.createdAt).toLocaleString()}
+                    </span>
+                    <small>Format: {snapshot.format}</small>
+                  </div>
+                  <div className="delivery-snapshot-actions">
+                    <button
+                      type="button"
+                      className="delivery-secondary-button"
+                      onClick={() => void restoreServerBackup(snapshot)}
+                      disabled={backupBusy}
+                    >
+                      Restore
+                    </button>
+                    <button
+                      type="button"
+                      className="delivery-secondary-button delivery-danger-button"
+                      onClick={() => void deleteServerBackup(snapshot)}
+                      disabled={backupBusy}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
         </section>
 
         <section className="delivery-panel delivery-backup-panel">
           <div className="delivery-backup-icon" aria-hidden="true">&#x2195;</div>
           <div className="delivery-backup-copy">
-            <h3>Back up your profile</h3>
+            <h3>Back up your profile settings</h3>
             <p>Download a JSON file containing your profile and selected dashboard theme.</p>
             <button type="button" className="delivery-primary-button" onClick={downloadBackup}>
-              Download backup &#x2193;
+              Download settings backup &#x2193;
             </button>
           </div>
         </section>
@@ -930,7 +1388,7 @@ function DeliveryDashboard() {
           <div className="delivery-backup-icon" aria-hidden="true">&#x21A7;</div>
           <div className="delivery-backup-copy">
             <h3>Restore profile settings</h3>
-            <p>Choose a valid Artist-Wrld delivery backup. Only your profile and theme will be restored.</p>
+            <p>Restore profile and theme settings from a valid Artist-Wrld delivery JSON backup. This does not restore workspace records.</p>
             <button type="button" className="delivery-secondary-button" onClick={() => restoreInput.current?.click()}>
               Choose backup file
             </button>
@@ -946,114 +1404,268 @@ function DeliveryDashboard() {
 
         <div className="delivery-safety-note">
           <strong>Data protection</strong>
-          <p>Restoring a backup does not create, delete, or overwrite delivery assignments, orders, payments, customer records, or transaction history. Those records must be managed through authorised application services.</p>
+          <p>The local JSON file contains profile and theme settings. Server snapshots use the authorised workspace backup service. Restoring a server snapshot is create-only: existing records are not overwritten. Review the confirmation before restoring or deleting a snapshot.</p>
         </div>
 
+        {notice && <div className="delivery-notice" role="status">{notice}</div>}
         {restoreError && <div className="delivery-error" role="alert">{restoreError}</div>}
       </>
     )
   }
-
   function renderSection() {
     switch (section) {
       case 'Overview':
         return renderOverview()
 
-      case 'My Deliveries':
+      case 'All Deliveries':
         return (
           <>
             <section className="delivery-page-intro">
               <span className="delivery-eyebrow">DELIVERY WORKSPACE</span>
-              <h2>My Deliveries</h2>
-              <p>Review assigned deliveries and update their progress.</p>
+              <h2>All Deliveries</h2>
+              <p>View and manage every delivery assigned to your account.</p>
             </section>
+
             <section className="delivery-panel">
               <div className="delivery-panel-heading">
                 <div>
-                  <h3>Assigned delivery records</h3>
-                  <p>Deliveries assigned to your account appear here.</p>
+                  <h3>All assigned deliveries</h3>
+                  <p>Deliveries at every stage, including completed deliveries.</p>
                 </div>
-                <span className="delivery-count-pill">{activeDeliveries.length} active</span>
+                <span className="delivery-count-pill">
+                  {deliveries.length} total
+                </span>
               </div>
-              {renderDeliveryTable(activeDeliveries)}
+              {renderDeliveryCards(deliveries)}
             </section>
           </>
         )
 
-      case 'Pickup & Drop-off':
+      case 'Awaiting Pickup':
         return (
           <>
             <section className="delivery-page-intro">
-              <span className="delivery-eyebrow">ROUTE DETAILS</span>
-              <h2>Pickup &amp; Drop-off</h2>
-              <p>Check collection points and delivery destinations before starting a route.</p>
+              <span className="delivery-eyebrow">DELIVERY WORKSPACE</span>
+              <h2>Awaiting Pickup</h2>
+              <p>Artwork assigned to you and waiting to be collected.</p>
             </section>
-            {deliveries.filter((item) => item.status !== 'Delivered').length === 0 ? (
-              <section className="delivery-panel delivery-empty">
-                <strong>No outstanding pickup or drop-off tasks</strong>
-                <p>New assigned deliveries will appear here.</p>
-              </section>
-            ) : deliveries.filter((item) => item.status !== 'Delivered').map((delivery) => (
-              <section className="delivery-panel delivery-route-card" key={delivery.id}>
-                <div className="delivery-route-heading">
-                  <div>
-                    <span className="delivery-eyebrow">{delivery.id}</span>
-                    <h3>{delivery.artwork}</h3>
-                    <p>Customer: {delivery.customer}</p>
-                  </div>
-                  <StatusBadge status={delivery.status} />
+
+            <section className="delivery-panel">
+              <div className="delivery-panel-heading">
+                <div>
+                  <h3>Ready for collection</h3>
+                  <p>Update each delivery after collecting the artwork.</p>
                 </div>
-                <div className="delivery-route-points">
-                  <div><span className="delivery-route-dot pickup" /><div><small>PICKUP</small><strong>{delivery.pickup}</strong></div></div>
-                  <div className="delivery-route-line" />
-                  <div><span className="delivery-route-dot dropoff" /><div><small>DROP-OFF</small><strong>{delivery.destination}</strong></div></div>
-                </div>
-                <p className="delivery-route-date">Scheduled date: {delivery.date}</p>
-                <button type="button" className="delivery-secondary-button" onClick={() => setSection('My Deliveries')}>
-                  Update delivery status
-                </button>
-              </section>
-            ))}
+                <span className="delivery-count-pill">
+                  {deliveries.filter((item) => item.status === 'Assigned').length} awaiting
+                </span>
+              </div>
+              {renderDeliveryCards(
+                deliveries.filter((item) => item.status === 'Assigned')
+              )}
+            </section>
           </>
         )
 
-      case 'Delivery History':
+      case 'In Transit':
         return (
           <>
             <section className="delivery-page-intro">
-              <span className="delivery-eyebrow">COMPLETED TASKS</span>
-              <h2>Delivery History</h2>
-              <p>Review deliveries marked as completed.</p>
+              <span className="delivery-eyebrow">ACTIVE DELIVERIES</span>
+              <h2>In Transit</h2>
+              <p>Track collected artwork and deliveries currently on the way.</p>
             </section>
+
+            <section className="delivery-panel">
+              <div className="delivery-panel-heading">
+                <div>
+                  <h3>Deliveries in progress</h3>
+                  <p>Update the status as each delivery progresses.</p>
+                </div>
+                <span className="delivery-count-pill">
+                  {deliveries.filter(
+                    (item) => item.status === 'Picked Up' || item.status === 'In Transit'
+                  ).length} in progress
+                </span>
+              </div>
+              {renderDeliveryCards(
+                deliveries.filter(
+                  (item) => item.status === 'Picked Up' || item.status === 'In Transit'
+                )
+              )}
+            </section>
+          </>
+        )
+
+      case 'Completed':
+        return (
+          <>
+            <section className="delivery-page-intro">
+              <span className="delivery-eyebrow">DELIVERY RECORDS</span>
+              <h2>Completed</h2>
+              <p>Review artwork deliveries that have reached their destination.</p>
+            </section>
+
             <section className="delivery-panel">
               <div className="delivery-panel-heading">
                 <div>
                   <h3>Completed deliveries</h3>
-                  <p>Historical delivery records are read-only in this view.</p>
+                  <p>Successfully delivered artwork appears here.</p>
                 </div>
+                <span className="delivery-count-pill">
+                  {completedDeliveries.length} completed
+                </span>
               </div>
-              {renderDeliveryTable(completedDeliveries)}
+              {renderDeliveryCards(completedDeliveries)}
             </section>
           </>
         )
-
       case 'Messages':
         return (
           <>
             <section className="delivery-page-intro">
               <span className="delivery-eyebrow">COMMUNICATION</span>
               <h2>Messages</h2>
-              <p>Keep delivery-related communication organised.</p>
+              <p>Send and manage delivery-related messages from your workspace.</p>
             </section>
-            <section className="delivery-panel">
-              <div className="delivery-empty">
-                <strong>No messages yet</strong>
-                <p>Delivery-related messages will appear here when messaging is available.</p>
+
+            <section className="delivery-panel delivery-message-composer">
+              <div className="delivery-panel-heading">
+                <div>
+                  <h3>Compose a message</h3>
+                  <p>Enter the recipient's Artist-Wrld account ID.</p>
+                </div>
               </div>
+
+              <form className="delivery-form" onSubmit={sendWorkspaceMessage}>
+                <div className="delivery-form-grid">
+                  <label>
+                    Recipient account ID
+                    <input
+                      value={recipientId}
+                      onChange={(event) => setRecipientId(event.target.value)}
+                      maxLength={191}
+                      placeholder="Enter recipient account ID"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Subject
+                    <input
+                      value={messageSubject}
+                      onChange={(event) => setMessageSubject(event.target.value)}
+                      maxLength={200}
+                      placeholder="Message subject"
+                      required
+                    />
+                  </label>
+                </div>
+
+                <label className="delivery-message-body-field">
+                  Message
+                  <textarea
+                    value={messageBody}
+                    onChange={(event) => setMessageBody(event.target.value)}
+                    maxLength={10000}
+                    rows={5}
+                    placeholder="Write your delivery-related messageâ€¦"
+                    required
+                  />
+                </label>
+
+                <div className="delivery-form-actions">
+                  <button
+                    type="submit"
+                    className="delivery-primary-button"
+                    disabled={messageBusy}
+                  >
+                    {messageBusy ? 'Sendingâ€¦' : 'Send message'}
+                  </button>
+                </div>
+                <p className="delivery-form-note">
+                  Recipient account IDs are required because this workspace does not provide a recipient directory.
+                </p>
+              </form>
+            </section>
+
+            {messageError && <div className="delivery-error" role="alert">{messageError}</div>}
+            {notice && <div className="delivery-notice" role="status">{notice}</div>}
+
+            <section className="delivery-panel delivery-message-list">
+              <div className="delivery-panel-heading">
+                <div>
+                  <h3>Your messages</h3>
+                  <p>Messages sent and received by your account.</p>
+                </div>
+                <button
+                  type="button"
+                  className="delivery-secondary-button"
+                  onClick={() => {
+                    setMessagesLoaded(false)
+                    void loadMessages()
+                  }}
+                  disabled={messagesLoading}
+                >
+                  {messagesLoading ? 'Refreshingâ€¦' : 'Refresh'}
+                </button>
+              </div>
+
+              {messagesLoading && messages.length === 0 ? (
+                <div className="delivery-empty">
+                  <p>Loading messagesâ€¦</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="delivery-empty">
+                  <strong>No messages yet</strong>
+                  <p>Messages you send or receive will appear here.</p>
+                </div>
+              ) : (
+                <div className="delivery-message-items">
+                  {messages.map((item) => {
+                    const incoming = item.recipientId === userId
+                    const unread = incoming && !item.readAt
+
+                    return (
+                      <article className="delivery-message-card" key={item.id}>
+                        <div className="delivery-message-meta">
+                          <span className={incoming ? 'delivery-message-badge received' : 'delivery-message-badge sent'}>
+                            {incoming ? 'Received' : 'Sent'}
+                          </span>
+                          {unread && (
+                            <span className="delivery-message-unread">Unread</span>
+                          )}
+                          <time dateTime={item.createdAt}>
+                            {new Date(item.createdAt).toLocaleString()}
+                          </time>
+                        </div>
+
+                        <h4>{item.subject}</h4>
+                        <p className="delivery-message-participants">
+                          {incoming
+                            ? `From account: ${item.senderId}`
+                            : `To account: ${item.recipientId}`}
+                        </p>
+                        <p className="delivery-message-content">{item.body}</p>
+
+                        {unread && (
+                          <div className="delivery-message-actions">
+                            <button
+                              type="button"
+                              className="delivery-secondary-button"
+                              onClick={() => void markWorkspaceMessageRead(item.id)}
+                            >
+                              Mark as read
+                            </button>
+                          </div>
+                        )}
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
             </section>
           </>
         )
-
       case 'My Profile':
         return renderProfile()
 
@@ -1099,9 +1711,10 @@ function DeliveryDashboard() {
               <span className="delivery-nav-icon" aria-hidden="true">
                 {{
                   'Overview': '\u25A6',
-                  'My Deliveries': '\u25C8',
-                  'Pickup & Drop-off': '\u21C4',
-                  'Delivery History': '\u25F7',
+                  'All Deliveries': '\u25A4',
+                  'Awaiting Pickup': '\u25C7',
+                  'In Transit': '\u21C4',
+                  'Completed': '\u2713',
                   'Messages': '\u2709',
                   'My Profile': '\u25CB',
                   'Settings': '\u2699',
@@ -1109,8 +1722,8 @@ function DeliveryDashboard() {
                 }[item]}
               </span>
               <span>{item}</span>
-              {item === 'My Deliveries' && activeDeliveries.length > 0 && (
-                <small>{activeDeliveries.length}</small>
+              {item === 'Awaiting Pickup' && deliveries.filter((delivery) => delivery.status === 'Assigned').length > 0 && (
+                <small>{deliveries.filter((delivery) => delivery.status === 'Assigned').length}</small>
               )}
             </button>
           ))}
@@ -1186,5 +1799,4 @@ function StatusBadge({ status }: { status: Delivery['status'] }) {
 }
 
 export default DeliveryDashboard
-
 

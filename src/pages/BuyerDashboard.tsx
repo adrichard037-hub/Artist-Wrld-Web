@@ -1,6 +1,7 @@
 import { logoutToLogin } from '../lib/logout'
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { API_BASE_URL } from '../lib/api'
 import './BuyerDashboard.css'
 
 type Section =
@@ -16,12 +17,35 @@ type Section =
 type Theme = 'Light' | 'Dark' | 'System'
 
 type Artwork = {
-  id: number
+  id: string
   title: string
   artist: string
   category: string
   price: number
-  image: string
+  image: string | null
+  description?: string | null
+}
+
+type BuyerOrder = {
+  id: string
+  artworkId: string
+  artworkTitle: string
+  artistId: string
+  quantity: number
+  unitPrice: number | string
+  total: number | string
+  status: string
+  createdAt: string
+}
+
+type WorkspaceMessage = {
+  id: string
+  senderId: string
+  recipientId: string
+  subject: string
+  body: string
+  readAt: string | null
+  createdAt: string
 }
 
 type BuyerProfile = {
@@ -37,10 +61,10 @@ type BuyerBackup = {
   createdAt: string
   profile: BuyerProfile
   theme: Theme
-  wishlist: number[]
+  wishlist: string[]
 }
 
-const navigation: Section[] = [
+const navigation: Exclude<Section, 'Backup & Restore'>[] = [
   'Overview',
   'Explore Art',
   'My Orders',
@@ -48,15 +72,39 @@ const navigation: Section[] = [
   'Messages',
   'My Profile',
   'Settings',
-  'Backup & Restore',
 ]
-
-const artworks: Artwork[] = []
-
-const sampleOrders: Array<{ id: string; artwork: string; artist: string; date: string; amount: number; status: string }> = []
 
 const formatMoney = (amount: number) =>
   `GH₵ ${amount.toLocaleString('en-GH', { maximumFractionDigits: 2 })}`
+
+async function requestJson<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}/api${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...init.headers,
+    },
+  })
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const message =
+      typeof payload === 'object' &&
+      payload !== null &&
+      'message' in payload &&
+      typeof payload.message === 'string'
+        ? payload.message
+        : `Request failed (${response.status}).`
+    throw new Error(message)
+  }
+
+  return payload as T
+}
 
 const readTheme = (): Theme => {
   try {
@@ -68,32 +116,12 @@ const readTheme = (): Theme => {
   return 'Light'
 }
 
-const readWishlist = (): number[] => {
-  try {
-    const saved = localStorage.getItem('artist-wrld-buyer-wishlist')
-    if (saved) {
-      const parsed: unknown = JSON.parse(saved)
-      if (Array.isArray(parsed)) {
-        return [...new Set(
-          parsed.filter(
-            (id): id is number =>
-              typeof id === 'number' && artworks.some((artwork) => artwork.id === id),
-          ),
-        )]
-      }
-    }
-  } catch {
-    // Ignore invalid stored data and use the default wishlist.
-  }
-  return []
-}
-
 function BuyerDashboard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const sectionFromUrl = (value: string | null): Section =>
-    navigation.find(
+    [...navigation, 'Backup & Restore' as Section].find(
       (item) =>
         item.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '-') === value
     ) ?? 'Overview'
@@ -115,7 +143,14 @@ function BuyerDashboard() {
     })
   }
   const [theme, setTheme] = useState<Theme>(readTheme)
-  const [wishlist, setWishlist] = useState<number[]>(readWishlist)
+  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [orders, setOrders] = useState<BuyerOrder[]>([])
+  const [messages, setMessages] = useState<WorkspaceMessage[]>([])
+  const [userId, setUserId] = useState('')
+  const [wishlist, setWishlist] = useState<string[]>([])
+  const [dataLoading, setDataLoading] = useState(true)
+  const [dataError, setDataError] = useState('')
+  const [busy, setBusy] = useState(false)
   
   const [profile, setProfile] = useState<BuyerProfile>({
     fullName: '',
@@ -128,88 +163,90 @@ function BuyerDashboard() {
   const [accountDisplayName, setAccountDisplayName] = useState('')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null)
+  const [shippingAddress, setShippingAddress] = useState('')
+  const [messageRecipient, setMessageRecipient] = useState('')
+  const [messageSubject, setMessageSubject] = useState('')
+  const [messageBody, setMessageBody] = useState('')
+  const [messageError, setMessageError] = useState('')
   const [notice, setNotice] = useState('')
   const [restoreError, setRestoreError] = useState('')
   const restoreInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadAuthenticatedAccountName() {
-      try {
-        const response = await fetch("https://artist-wrld-backend.onrender.com/api/auth/me", {
-          method: "GET",
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        });
-
-        if (!response.ok) return;
-
-        const payload = await response.json();
-        const user = payload?.user ?? payload;
-        const name =
-          typeof user?.fullName === "string" ? user.fullName.trim() : "";
-
-        if (name) setAccountDisplayName(name);
-      } catch (error: unknown) {
-        if (!(error instanceof Error) || error.name !== "AbortError") {
-          setNotice("Unable to refresh the account name.")
-        }
-      }
-    }
-
-    void loadAuthenticatedAccountName();
-
-    return () => controller.abort();
-  }, []);
-
-
-  useEffect(() => {
     const controller = new AbortController()
 
-    async function loadBuyerProfile() {
+    async function loadBuyerDashboard() {
       try {
-        const response = await fetch("https://artist-wrld-backend.onrender.com/api/dashboard/profile", {
-          method: "GET",
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        })
+        const [artworkData, wishlistData, orderData, messageData, profileData, preferenceData] =
+          await Promise.all([
+            requestJson<{ artworks?: Artwork[] }>('/artworks/public', {
+              signal: controller.signal,
+            }),
+            requestJson<{
+              items?: Array<{ artworkId: string; artwork?: { id: string } }>
+            }>('/wishlist', { signal: controller.signal }),
+            requestJson<{ orders?: BuyerOrder[] }>('/workspace/orders', {
+              signal: controller.signal,
+            }),
+            requestJson<{ messages?: WorkspaceMessage[] }>('/workspace/messages', {
+              signal: controller.signal,
+            }),
+            requestJson<{
+              user?: { id?: string; fullName?: string; email?: string }
+              profile?: { location?: string | null; profileImage?: string | null }
+            }>('/dashboard/profile', { signal: controller.signal }),
+            requestJson<{ preferences?: Array<{ key: string; value: string }> }>(
+              '/dashboard/preferences',
+              { signal: controller.signal },
+            ),
+          ])
 
-        if (!response.ok) {
-          throw new Error("Unable to load your saved buyer profile.")
-        }
+        if (controller.signal.aborted) return
 
-        const payload = await response.json()
-        const user = payload?.user
-        const savedProfile = payload?.profile
-
-        if (user && typeof user.fullName === "string") {
-          setProfile((current) => ({
-            ...current,
-            fullName: user.fullName,
-            email: typeof user.email === "string" ? user.email : current.email,
-            location: typeof savedProfile?.location === "string"
-              ? savedProfile.location
-              : "",
-          }))
-          setAccountDisplayName(user.fullName)
-        }
-
-        setProfileImage(
-          typeof savedProfile?.profileImage === "string"
-            ? savedProfile.profileImage
-            : null
+        setArtworks(artworkData.artworks ?? [])
+        setWishlist(
+          (wishlistData.items ?? []).map((item) =>
+            item.artwork?.id ?? item.artworkId,
+          ),
         )
-      } catch (error) {
-        if (error instanceof Error && error.name !== "AbortError") {
-          setNotice(error.message || "Unable to load your saved profile.")
+        setOrders(orderData.orders ?? [])
+        setMessages(messageData.messages ?? [])
+        setUserId(profileData.user?.id ?? '')
+
+        if (profileData.user) {
+          const fullName = profileData.user.fullName ?? ''
+          setProfile({
+            fullName,
+            email: profileData.user.email ?? '',
+            location: profileData.profile?.location ?? '',
+          })
+          setAccountDisplayName(fullName)
         }
+
+        setProfileImage(profileData.profile?.profileImage ?? null)
+
+        const savedTheme = preferenceData.preferences?.find(
+          (preference) => preference.key === 'buyer-theme',
+        )?.value
+        if (savedTheme === 'Light' || savedTheme === 'Dark' || savedTheme === 'System') {
+          setTheme(savedTheme)
+        }
+        setDataError('')
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setDataError(
+            error instanceof Error
+              ? error.message
+              : 'Unable to load your buyer dashboard.',
+          )
+        }
+      } finally {
+        if (!controller.signal.aborted) setDataLoading(false)
       }
     }
 
-    void loadBuyerProfile()
+    void loadBuyerDashboard()
     return () => controller.abort()
   }, [])
   useEffect(() => {
@@ -219,14 +256,6 @@ function BuyerDashboard() {
       // The selected theme remains active for this session.
     }
   }, [theme])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('artist-wrld-buyer-wishlist', JSON.stringify(wishlist))
-    } catch {
-      // The wishlist remains available for this session.
-    }
-  }, [wishlist])
 
   const filteredArtworks = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -239,23 +268,38 @@ function BuyerDashboard() {
           .includes(normalizedQuery)
       return matchesCategory && matchesQuery
     })
-  }, [query, category])
+  }, [artworks, query, category])
 
-  const wishlistArtworks = artworks.filter((artwork) =>
-    wishlist.includes(artwork.id),
-  )
+  const wishlistArtworks = artworks.filter((artwork) => wishlist.includes(artwork.id))
 
-  function toggleWishlist(id: number) {
-    setWishlist((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    )
-    setNotice(
-      wishlist.includes(id)
-        ? 'Artwork removed from your wishlist.'
-        : 'Artwork added to your wishlist.',
-    )
+  async function toggleWishlist(artwork: Artwork) {
+    const saved = wishlist.includes(artwork.id)
+    setBusy(true)
+    setNotice('')
+
+    try {
+      await requestJson(
+        saved
+          ? `/wishlist/${encodeURIComponent(artwork.id)}`
+          : '/wishlist',
+        saved
+          ? { method: 'DELETE' }
+          : {
+              method: 'POST',
+              body: JSON.stringify({ artworkId: artwork.id }),
+            },
+      )
+      setWishlist((current) =>
+        saved
+          ? current.filter((id) => id !== artwork.id)
+          : [...current, artwork.id],
+      )
+      setNotice(saved ? 'Artwork removed from your wishlist.' : 'Artwork saved to your wishlist.')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Unable to update your wishlist.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   function handleProfileImageChange(event: ChangeEvent<HTMLInputElement>) {
@@ -360,9 +404,13 @@ function BuyerDashboard() {
         typeof backup.profile.fullName !== 'string' ||
         typeof backup.profile.email !== 'string' ||
         typeof backup.profile.location !== 'string' ||
-        !['Light', 'Dark', 'System'].includes(backup.theme ?? '') ||
+        !(
+          backup.theme === 'Light' ||
+          backup.theme === 'Dark' ||
+          backup.theme === 'System'
+        ) ||
         !Array.isArray(backup.wishlist) ||
-        !backup.wishlist.every((id) => typeof id === 'number' && Number.isSafeInteger(id) && id > 0)
+        !backup.wishlist.every((id) => typeof id === 'string' && id.length > 0)
       ) {
         throw new Error('Some backup settings or profile fields are invalid.')
       }
@@ -374,13 +422,43 @@ function BuyerDashboard() {
         return
       }
 
+      const restoredWishlist = [...new Set(backup.wishlist)]
+      const wishlistToRemove = wishlist.filter((id) => !restoredWishlist.includes(id))
+      const wishlistToAdd = restoredWishlist.filter((id) => !wishlist.includes(id))
+
+      await Promise.all([
+        requestJson('/dashboard/profile', {
+          method: 'PUT',
+          body: JSON.stringify({
+            fullName: backup.profile.fullName,
+            email: backup.profile.email,
+            location: backup.profile.location || null,
+            profileImage: profileImage || null,
+          }),
+        }),
+        requestJson('/dashboard/preferences', {
+          method: 'PUT',
+          body: JSON.stringify({ key: 'buyer-theme', value: backup.theme }),
+        }),
+        ...wishlistToRemove.map((id) =>
+          requestJson(`/wishlist/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+        ),
+        ...wishlistToAdd.map((artworkId) =>
+          requestJson('/wishlist', {
+            method: 'POST',
+            body: JSON.stringify({ artworkId }),
+          }),
+        ),
+      ])
+
       setProfile({
         fullName: backup.profile.fullName.slice(0, 100),
         email: backup.profile.email.slice(0, 254),
         location: backup.profile.location.slice(0, 120),
       })
+      setAccountDisplayName(backup.profile.fullName.slice(0, 100))
       setTheme(backup.theme as Theme)
-      setWishlist([...new Set(backup.wishlist as number[])])
+      setWishlist(restoredWishlist)
       setSection('Overview')
       setNotice('Buyer settings restored. Orders and transaction records were not changed.')
     } catch (error) {
@@ -408,7 +486,7 @@ function BuyerDashboard() {
         {items.map((artwork) => (
           <article className="buyer-art-card" key={artwork.id}>
             <div className="buyer-art-image">
-              <img src={artwork.image} alt={artwork.title} loading="lazy" />
+              <img src={artwork.image ?? ''} alt={artwork.title} loading="lazy" />
               <button
                 type="button"
                 className={`buyer-heart ${wishlist.includes(artwork.id) ? 'is-saved' : ''}`}
@@ -418,7 +496,8 @@ function BuyerDashboard() {
                     : `Add ${artwork.title} to wishlist`
                 }
                 aria-pressed={wishlist.includes(artwork.id)}
-                onClick={() => toggleWishlist(artwork.id)}
+                onClick={() => void toggleWishlist(artwork)}
+                disabled={busy}
               >
                 {wishlist.includes(artwork.id) ? '♥' : '♡'}
               </button>
@@ -429,7 +508,20 @@ function BuyerDashboard() {
               <p>by {artwork.artist}</p>
               <div className="buyer-art-bottom">
                 <strong>{formatMoney(artwork.price)}</strong>
-                <Link to="/artworks" className="buyer-view-link">View art</Link>
+                <div className="buyer-card-actions">
+                  <Link to="/artworks" className="buyer-view-link">View art</Link>
+                  <button
+                    type="button"
+                    className="buyer-view-link"
+                    onClick={() => {
+                      setSelectedArtwork(artwork)
+                      setShippingAddress('')
+                      setSection('Explore Art')
+                    }}
+                  >
+                    Request order
+                  </button>
+                </div>
               </div>
             </div>
           </article>
@@ -439,7 +531,7 @@ function BuyerDashboard() {
   }
 
   function renderOrders(limit?: number) {
-    const orders = limit ? sampleOrders.slice(0, limit) : sampleOrders
+    const visibleOrders = limit ? orders.slice(0, limit) : orders
 
     return (
       <div className="buyer-panel">
@@ -455,18 +547,18 @@ function BuyerDashboard() {
               </tr>
             </thead>
             <tbody>
-              {orders.length === 0 ? (<tr><td colSpan={5}>You have no recorded orders yet.</td></tr>) : orders.map((order) => (
+              {visibleOrders.length === 0 ? (<tr><td colSpan={5}>You have no recorded orders yet.</td></tr>) : visibleOrders.map((order) => (
                 <tr key={order.id}>
                   <td><strong>{order.id}</strong></td>
                   <td>
-                    <strong>{order.artwork}</strong>
-                    <small>{order.artist}</small>
+                    <strong>{order.artworkTitle}</strong>
+                    <small>Artist account: {order.artistId}</small>
                   </td>
-                  <td>{order.date}</td>
-                  <td>{formatMoney(order.amount)}</td>
+                  <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td>{formatMoney(Number(order.total))}</td>
                   <td>
                     <span className={`buyer-status status-${order.status.toLowerCase()}`}>
-                      {order.status}
+                      {order.status.replace(/_/g, ' ')}
                     </span>
                   </td>
                 </tr>
@@ -488,13 +580,11 @@ function BuyerDashboard() {
     }
 
     try {
-      const response = await fetch("https://artist-wrld-backend.onrender.com/api/dashboard/profile", {
+      const result = await requestJson<{
+        user?: { fullName?: string; email?: string }
+        profile?: { location?: string | null; profileImage?: string | null }
+      }>('/dashboard/profile', {
         method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
         body: JSON.stringify({
           fullName: profile.fullName.trim(),
           email: profile.email.trim(),
@@ -503,20 +593,16 @@ function BuyerDashboard() {
         }),
       })
 
-      const result = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(result.message || "Could not save your profile.")
-      }
-
       if (result.user) {
+        const savedFullName = result.user.fullName
+        const savedEmail = result.user.email
         setProfile((current) => ({
           ...current,
-          fullName: result.user.fullName ?? current.fullName,
-          email: result.user.email ?? current.email,
+          fullName: savedFullName ?? current.fullName,
+          email: savedEmail ?? current.email,
           location: result.profile?.location ?? current.location,
         }))
-        setAccountDisplayName(result.user.fullName ?? profile.fullName)
+        setAccountDisplayName(savedFullName ?? profile.fullName)
       }
 
       if (result.profile?.profileImage !== undefined) {
@@ -530,6 +616,111 @@ function BuyerDashboard() {
           ? error.message
           : "Could not save your profile. Check that the backend is running."
       )
+    }
+  }
+
+  async function placeOrder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selectedArtwork) return
+    if (shippingAddress.trim().length < 5) {
+      setNotice('Enter a complete shipping address before placing your order.')
+      return
+    }
+
+    setBusy(true)
+    setNotice('')
+
+    try {
+      const result = await requestJson<{ message?: string; order?: BuyerOrder }>('/workspace/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          artworkId: selectedArtwork.id,
+          quantity: 1,
+          shippingAddress: shippingAddress.trim(),
+        }),
+      })
+
+      if (!result.order) {
+        throw new Error('The server did not return the created order.')
+      }
+      const createdOrder = result.order
+      setOrders((current) => [createdOrder, ...current])
+      setSelectedArtwork(null)
+      setShippingAddress('')
+      setNotice(result.message || 'Your order was created. Payment has not been confirmed.')
+      setSection('My Orders')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Unable to place this order.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function sendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setMessageError('')
+    setNotice('')
+
+    if (messageRecipient.trim() === userId) {
+      setMessageError('You cannot send a message to your own account.')
+      return
+    }
+
+    setBusy(true)
+    try {
+      await requestJson('/workspace/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipientId: messageRecipient.trim(),
+          subject: messageSubject.trim(),
+          body: messageBody.trim(),
+        }),
+      })
+      const result = await requestJson<{ messages?: WorkspaceMessage[] }>(
+        '/workspace/messages',
+      )
+      setMessages(result.messages ?? [])
+      setMessageSubject('')
+      setMessageBody('')
+      setNotice('Message sent successfully.')
+    } catch (error) {
+      setMessageError(error instanceof Error ? error.message : 'Unable to send the message.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function markMessageRead(messageId: string) {
+    setMessageError('')
+    try {
+      const result = await requestJson<{ item?: WorkspaceMessage }>(
+        `/workspace/messages/${encodeURIComponent(messageId)}/read`,
+        { method: 'PATCH' },
+      )
+      if (result.item) {
+        const updatedMessage = result.item
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === messageId ? updatedMessage : message,
+          ),
+        )
+      }
+    } catch (error) {
+      setMessageError(error instanceof Error ? error.message : 'Unable to mark this message as read.')
+    }
+  }
+
+  async function saveTheme(value: Theme) {
+    const previous = theme
+    setTheme(value)
+    try {
+      await requestJson('/dashboard/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({ key: 'buyer-theme', value }),
+      })
+    } catch (error) {
+      setTheme(previous)
+      setNotice(error instanceof Error ? error.message : 'Unable to save the theme preference.')
     }
   }
 
@@ -549,12 +740,12 @@ function BuyerDashboard() {
 
             <section className="buyer-stat-grid" aria-label="Account summary">
               <article className="buyer-stat-card">
-                <span>Total orders</span><strong>{sampleOrders.length}</strong>
+                <span>Total orders</span><strong>{orders.length}</strong>
                 <small>Your recorded order history</small>
               </article>
               <article className="buyer-stat-card">
                 <span>In progress</span>
-                <strong>{sampleOrders.filter((order) => order.status !== 'Delivered').length}</strong>
+                <strong>{orders.filter((order) => order.status !== 'DELIVERED' && order.status !== 'CANCELLED').length}</strong>
                 <small>Orders not yet delivered</small>
               </article>
               <article className="buyer-stat-card">
@@ -562,8 +753,8 @@ function BuyerDashboard() {
                 <small>Artworks you have saved</small>
               </article>
               <article className="buyer-stat-card">
-                <span>Delivered</span>
-                <strong>{sampleOrders.filter((order) => order.status === 'Delivered').length}</strong>
+                <span>Completed</span>
+                <strong>{orders.filter((order) => order.status === 'DELIVERED').length}</strong>
                 <small>Completed orders</small>
               </article>
             </section>
@@ -601,6 +792,41 @@ function BuyerDashboard() {
                 <option>All</option><option>Painting</option><option>Abstract</option><option>Photography</option><option>Sculpture</option>
               </select>
             </div>
+            {selectedArtwork && (
+              <form className="buyer-order-form buyer-panel" onSubmit={placeOrder}>
+                <div>
+                  <h3>Request “{selectedArtwork.title}”</h3>
+                  <p>
+                    {formatMoney(selectedArtwork.price)} · Placing an order does
+                    not confirm payment.
+                  </p>
+                </div>
+                <label>
+                  Shipping address
+                  <textarea
+                    value={shippingAddress}
+                    onChange={(event) => setShippingAddress(event.target.value)}
+                    minLength={5}
+                    maxLength={2000}
+                    required
+                    rows={3}
+                  />
+                </label>
+                <div className="buyer-order-actions">
+                  <button type="submit" className="buyer-primary-button" disabled={busy}>
+                    {busy ? 'Submitting…' : 'Place order request'}
+                  </button>
+                  <button
+                    type="button"
+                    className="buyer-secondary-button"
+                    onClick={() => setSelectedArtwork(null)}
+                    disabled={busy}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
             {renderArtworkCards(filteredArtworks)}
           </>
         )
@@ -638,12 +864,82 @@ function BuyerDashboard() {
               <h2>Messages</h2>
               <p>Stay connected with artists about their work.</p>
             </section>
-            <div className="buyer-panel buyer-empty">
-              <span aria-hidden="true">✉</span>
-              <h3>Your conversations will appear here</h3>
-              <p>Messaging will become available when buyer and artist accounts are connected to the backend.</p>
-              <Link to="/artists" className="buyer-primary-button">Discover artists</Link>
-            </div>
+            <form className="buyer-message-form buyer-panel" onSubmit={sendMessage}>
+              <h3>Contact an artist</h3>
+              <p>Use the artist’s account ID from their profile.</p>
+              <label>
+                Artist account ID
+                <input
+                  value={messageRecipient}
+                  onChange={(event) => setMessageRecipient(event.target.value)}
+                  maxLength={191}
+                  required
+                />
+              </label>
+              <label>
+                Subject
+                <input
+                  value={messageSubject}
+                  onChange={(event) => setMessageSubject(event.target.value)}
+                  maxLength={200}
+                  required
+                />
+              </label>
+              <label>
+                Message
+                <textarea
+                  value={messageBody}
+                  onChange={(event) => setMessageBody(event.target.value)}
+                  maxLength={10000}
+                  rows={4}
+                  required
+                />
+              </label>
+              {messageError && <p className="buyer-error" role="alert">{messageError}</p>}
+              <button type="submit" className="buyer-primary-button" disabled={busy}>
+                {busy ? 'Sending…' : 'Send message'}
+              </button>
+              <Link to="/artists" className="buyer-view-link">Discover artists</Link>
+            </form>
+            <section className="buyer-message-list">
+              <h3>Your messages</h3>
+              {messages.length === 0 ? (
+                <div className="buyer-panel buyer-empty">
+                  <span aria-hidden="true">✉</span>
+                  <h3>No messages yet</h3>
+                  <p>Messages you send or receive will appear here.</p>
+                </div>
+              ) : messages.map((message) => {
+                const incoming = message.recipientId === userId
+                const unread = incoming && !message.readAt
+
+                return (
+                  <article className="buyer-message-card buyer-panel" key={message.id}>
+                    <div className="buyer-message-meta">
+                      <span>{incoming ? 'Received' : 'Sent'}</span>
+                      <time dateTime={message.createdAt}>
+                        {new Date(message.createdAt).toLocaleString()}
+                      </time>
+                      {unread && <strong>Unread</strong>}
+                    </div>
+                    <h4>{message.subject}</h4>
+                    <p className="buyer-message-participant">
+                      {incoming ? `From account: ${message.senderId}` : `To account: ${message.recipientId}`}
+                    </p>
+                    <p>{message.body}</p>
+                    {unread && (
+                      <button
+                        type="button"
+                        className="buyer-secondary-button"
+                        onClick={() => void markMessageRead(message.id)}
+                      >
+                        Mark as read
+                      </button>
+                    )}
+                  </article>
+                )
+              })}
+            </section>
           </>
         )
 
@@ -700,7 +996,7 @@ function BuyerDashboard() {
                 <input maxLength={120} value={profile.location} onChange={(event) => setProfile({ ...profile, location: event.target.value })} />
               </label>
               <button className="buyer-primary-button" type="submit">Save profile</button>
-              <p className="buyer-demo-note">Profile edits are currently held in this dashboard session. Persistent account updates require backend integration.</p>
+              <p className="buyer-demo-note">Profile edits are saved to your Artist-Wrld account.</p>
             </form>
           </>
         )
@@ -716,12 +1012,12 @@ function BuyerDashboard() {
             <div className="buyer-panel buyer-settings-panel">
               <div className="buyer-setting-row">
                 <div><h3>Appearance</h3><p>Choose how the dashboard looks on your device.</p></div>
-                <select aria-label="Dashboard theme" value={theme} onChange={(event) => setTheme(event.target.value as Theme)}>
+                <select aria-label="Dashboard theme" value={theme} onChange={(event) => void saveTheme(event.target.value as Theme)}>
                   <option>Light</option><option>Dark</option><option>System</option>
                 </select>
               </div>
               <div className="buyer-setting-row">
-                <div><h3>Wishlist</h3><p>Your saved artworks are stored in this browser for now.</p></div>
+                <div><h3>Wishlist</h3><p>Your saved artworks sync with your Artist-Wrld account.</p></div>
                 <button type="button" className="buyer-secondary-button" onClick={() => setSection('Wishlist')}>View wishlist</button>
               </div>
               <div className="buyer-setting-row">
@@ -789,7 +1085,7 @@ function BuyerDashboard() {
             <button
               type="button"
               key={item}
-              className={section === item ? 'active' : ''}
+              className={section === item || (item === 'Settings' && section === 'Backup & Restore') ? 'active' : ''}
               onClick={() => { setSection(item); setNotice(''); setRestoreError('') }}
             >
               <span className="buyer-nav-icon" aria-hidden="true">
@@ -801,7 +1097,6 @@ function BuyerDashboard() {
                   'Messages': '\u2709',
                   'My Profile': '\u25CB',
                   'Settings': '\u2699',
-                  'Backup & Restore': '↻',
               }[item]}
               </span>
               <span>{item}</span>
@@ -822,6 +1117,8 @@ function BuyerDashboard() {
         </header>
 
         <div className="buyer-content">
+          {dataLoading && <div className="buyer-notice" role="status">Loading your account data…</div>}
+          {dataError && <div className="buyer-error" role="alert">{dataError}</div>}
           {notice && <div className="buyer-notice" role="status"><span>{notice}</span><button type="button" aria-label="Dismiss message" onClick={() => setNotice('')}>×</button></div>}
           {renderSection()}
           <footer className="buyer-footer"><span>artist-wrld.</span><span>Discover art. Collect meaning.</span></footer>
@@ -832,9 +1129,3 @@ function BuyerDashboard() {
 }
 
 export default BuyerDashboard
-
-
-
-
-
-

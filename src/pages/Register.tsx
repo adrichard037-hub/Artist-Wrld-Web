@@ -1,5 +1,6 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AUTH_API_URL } from '../lib/api'
 import './Auth.css'
 
 function Register() {
@@ -40,7 +41,7 @@ function Register() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('https://artist-wrld-backend.onrender.com/api/auth/register', {
+      const response = await fetch(`${AUTH_API_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

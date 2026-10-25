@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
+import { API_URL } from '../lib/api'
 import './Artists.css'
 
 type Artist = {
@@ -28,7 +29,7 @@ function Artists() {
         setError('')
 
         const response = await fetch(
-          'https://artist-wrld-backend.onrender.com/api/artists/public',
+          `${API_URL}/artists/public`,
           { signal: controller.signal },
         )
 
@@ -152,7 +153,7 @@ function Artists() {
         <Link to="/" className="artists-brand">
           artist<span>-wrld</span><b>.</b>
         </Link>
-        <span>© 2026 Artist-Wrld. Made for the love of art.</span>
+        <span>Â© 2026 Artist-Wrld. Made for the love of art.</span>
       </footer>
     </main>
   )

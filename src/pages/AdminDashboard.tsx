@@ -1,6 +1,7 @@
 import { logoutToLogin } from '../lib/logout'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { API_URL } from '../lib/api'
 import './AdminDashboard.css'
 
 type Role = 'Admin' | 'Artist' | 'Buyer' | 'Delivery Man'
@@ -24,7 +25,7 @@ type DeletedUserAudit = {
   reason: string
 }
 
-const ADMIN_API_URL = 'https://artist-wrld-backend.onrender.com/api/admin'
+const ADMIN_API_URL = `${API_URL}/admin`
 
 type AdminArtwork = {
   id: string
@@ -126,8 +127,7 @@ type Section =
   | 'Report'
   | 'User Activity'
   | 'Deleted Users Audit Trail'
-  | 'Configuration Settings'
-  | 'Backup & Restore'
+  | 'Settings'
 
 
 
@@ -141,8 +141,7 @@ const sections: Section[] = [
   'Report',
   'User Activity',
   'Deleted Users Audit Trail',
-  'Configuration Settings',
-  'Backup & Restore',
+  'Settings',
 ]
 
 function AdminDashboard() {
@@ -178,6 +177,12 @@ function AdminDashboard() {
   const [artworksLoading, setArtworksLoading] = useState(false)
   const [artworksMessage, setArtworksMessage] = useState('')
   const [artworksReloadKey, setArtworksReloadKey] = useState(0)
+  const [artworkStatus, setArtworkStatus] = useState('All')
+  const visibleArtworks = adminArtworks.filter(
+    (artwork) =>
+      artworkStatus === 'All' ||
+      artwork.status.toLowerCase() === artworkStatus.toLowerCase(),
+  )
   const [deletedUsers, setDeletedUsers] = useState<DeletedUserAudit[]>([])
   const [userActivities, setUserActivities] = useState<ApiUserActivity[]>([])
   const [activityQuery, setActivityQuery] = useState('')
@@ -194,6 +199,8 @@ function AdminDashboard() {
   const [reportQuery, setReportQuery] = useState('')
   const [securityReportUsers, setSecurityReportUsers] = useState<SecurityReportUser[]>([])
   const [pepperConfigured, setPepperConfigured] = useState(false)
+  const [revealSecrets, setRevealSecrets] = useState(false)
+  const mask = (value: string) => (revealSecrets ? value : value.slice(0, 6) + '••••••••')
   const [securityReportMessage, setSecurityReportMessage] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
   const [statusMessage, setStatusMessage] = useState('')
@@ -266,7 +273,7 @@ function AdminDashboard() {
       setArtworksMessage('')
 
       try {
-        const response = await fetch('https://artist-wrld-backend.onrender.com/api/artworks', {
+        const response = await fetch(API_BASE + '/api/artworks', {
           method: 'GET',
           credentials: 'include',
           cache: 'no-store',
@@ -763,6 +770,8 @@ function AdminDashboard() {
     }
   }
   function exportUsers() {
+    if (!window.confirm('This file contains password hashes and salts. Export anyway?')) return
+
     const normalizedReportQuery = reportQuery.trim().toLowerCase()
     const reportUsers = securityReportUsers.filter((user) =>
       user.username.toLowerCase().includes(normalizedReportQuery),
@@ -931,8 +940,8 @@ function buildFullBackup(): FullBackup {
         <div className="admin-stat-grid">
           <article className="admin-stat"><span>Total users</span><strong>{users.length}</strong><small>All account roles</small></article>
           <article className="admin-stat"><span>Artists</span><strong>{users.filter((user) => user.role === 'Artist').length}</strong><small>Artist accounts</small></article>
-          <article className="admin-stat"><span>Active accounts</span><strong>{users.filter((user) => user.status === 'Active').length}</strong><small>Demonstration data</small></article>
-          <article className="admin-stat"><span>Deleted-user records</span><strong>{deletedUsers.length}</strong><small>Current session only</small></article>
+          <article className="admin-stat"><span>Active accounts</span><strong>{users.filter((user) => user.status === 'Active').length}</strong><small>From the database</small></article>
+          <article className="admin-stat"><span>Deleted-user records</span><strong>{deletedUsers.length}</strong><small>From the audit trail</small></article>
         </div>
 
         <div className="admin-panel-grid">
@@ -942,7 +951,7 @@ function buildFullBackup(): FullBackup {
               <button onClick={openAddUser}>Add user</button>
               <button onClick={() => setSection('User Management')}>Manage users</button>
               <button onClick={() => setSection('Report')}>Report</button>
-              <button onClick={() => setSection('Backup & Restore')}>Backup and Restore</button>
+              <button onClick={() => setSection('Settings')}>Backup and Restore</button>
             </div>
           </section>
           <section className="admin-panel">
@@ -1112,7 +1121,7 @@ function buildFullBackup(): FullBackup {
         )
       }
       case 'Deleted Users Audit Trail':
-        return <section className="admin-panel"><div className="admin-panel-heading"><div><h3>Deleted users audit trail</h3><p>Persistent records retrieved from the backend. Deactivated accounts are tracked separately.</p></div></div>{deletedUsers.length ? <div id="admin-report-table" className="admin-table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Deleted by</th><th>Date</th><th>Reason</th></tr></thead><tbody>{deletedUsers.map((entry) => <tr key={entry.id}><td>{entry.username}</td><td>{entry.role}</td><td>{entry.deletedBy}</td><td>{entry.deletedAt}</td><td>{entry.reason}</td></tr>)}</tbody></table></div> : <div className="admin-empty-state"><strong>No deleted-user records</strong><p>No permanent deletion records were returned by the backend.</p></div>}</section>
+        return <section className="admin-panel"><div className="admin-panel-heading"><div><h3>Deleted users audit trail</h3><p>Persistent records retrieved from the backend. Deactivated accounts are tracked separately.</p></div></div>{deletedUsers.length ? <div className="admin-table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Deleted by</th><th>Date</th><th>Reason</th></tr></thead><tbody>{deletedUsers.map((entry) => <tr key={entry.id}><td>{entry.username}</td><td>{entry.role}</td><td>{entry.deletedBy}</td><td>{entry.deletedAt}</td><td>{entry.reason}</td></tr>)}</tbody></table></div> : <div className="admin-empty-state"><strong>No deleted-user records</strong><p>No permanent deletion records were returned by the backend.</p></div>}</section>
       case 'Report': {
         const normalizedReportQuery = reportQuery.trim().toLowerCase()
         const reportUsers = securityReportUsers.filter((user) =>
@@ -1132,6 +1141,9 @@ function buildFullBackup(): FullBackup {
               </div>
               <div className="admin-button-row">
                 <button className="admin-secondary-button" onClick={() => document.getElementById('admin-report-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View Report</button>
+                <button className="admin-secondary-button" onClick={() => setRevealSecrets((current) => !current)}>
+                  {revealSecrets ? 'Hide values' : 'Reveal values'}
+                </button>
                 <button className="admin-primary-button" onClick={exportUsers}>
                   Download CSV
                 </button>
@@ -1211,8 +1223,8 @@ function buildFullBackup(): FullBackup {
                   {reportUsers.map((user) => (
                     <tr key={user.id}>
                       <td>{user.username}</td>
-                      <td className="admin-security-report-value">{user.passwordHash}</td>
-                      <td className="admin-security-report-value">{user.passwordSalt}</td>
+                      <td className="admin-security-report-value">{mask(user.passwordHash)}</td>
+                      <td className="admin-security-report-value">{mask(user.passwordSalt)}</td>
                       <td>{pepperConfigured ? 'Configured - protected server-side' : 'Not configured'}</td>
                     </tr>
                   ))}
@@ -1235,10 +1247,8 @@ function buildFullBackup(): FullBackup {
             </div>
           </section>
         )
-      }      case 'Configuration Settings':
-        return <section className="admin-panel"><div className="admin-panel-heading"><div><h3>Configuration settings</h3><p>Adjust demonstration settings for Artist-Wrld.</p></div></div><div className="admin-settings-form"><label>Website name<input value={siteName} onChange={(event) => setSiteName(event.target.value)} /></label><label>Marketplace commission (%)<input type="number" min="0" max="100" value={commission} onChange={(event) => setCommission(event.target.value)} /></label><label>Interface theme<select value={theme} onChange={(event) => setTheme(event.target.value)}><option>Light</option><option>Dark</option><option>System</option></select></label><label className="admin-toggle-setting"><span><strong>Allow new registrations</strong><small>Controls the demonstration setting only.</small></span><input type="checkbox" checked={registrationEnabled} onChange={(event) => setRegistrationEnabled(event.target.checked)} /></label><button className="admin-primary-button" onClick={() => setStatusMessage('Settings updated in this demonstration session.')}>Save settings</button></div></section>
-      case 'Backup & Restore':
-        return <div className="admin-backup-grid"><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Full Application Backup</h3><p>Captures all available application data and current configuration settings.</p></div></div><div className="admin-report-warning"><strong>Complete Available Data</strong><p>The backup includes available user accounts, deleted-user audit entries and configuration settings. Unconnected artwork, orders, sales, verification and delivery records are clearly identified.</p></div><div className="admin-button-row"><button className="admin-primary-button" onClick={createBackup}>Create Full Backup</button><button className="admin-secondary-button" onClick={downloadConfiguration}>Download Full Backup</button></div>{backups.length > 0 && <div className="admin-backup-list"><h4>Session snapshots</h4>{backups.map((backup) => <div key={backup.id}>{new Date(backup.createdAt).toLocaleString()} <span>Users: {backup.users.length} · Audit entries: {backup.deletedUsers.length}</span></div>)}</div>}</section><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Restore from Backup</h3><p>Recover missing data while protecting existing records and newer information.</p></div></div><label className="admin-field-label">Select Backup to Restore<select value={selectedBackup} onChange={(event) => setSelectedBackup(event.target.value)}><option value="">Select a snapshot</option>{backups.map((backup) => <option value={backup.id} key={backup.id}>{backup.createdAt}</option>)}</select></label><button className="admin-primary-button" onClick={restoreConfiguration} disabled={!selectedBackup}>Restore Backup</button></section></div>
+      }      case 'Settings':
+        return <><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Configuration settings</h3><p>Adjust demonstration settings for Artist-Wrld.</p></div></div><div className="admin-settings-form"><label>Website name<input value={siteName} onChange={(event) => setSiteName(event.target.value)} /></label><label>Marketplace commission (%)<input type="number" min="0" max="100" value={commission} onChange={(event) => setCommission(event.target.value)} /></label><label>Interface theme<select value={theme} onChange={(event) => setTheme(event.target.value)}><option>Light</option><option>Dark</option><option>System</option></select></label><label className="admin-toggle-setting"><span><strong>Allow new registrations</strong><small>Controls the demonstration setting only.</small></span><input type="checkbox" checked={registrationEnabled} onChange={(event) => setRegistrationEnabled(event.target.checked)} /></label><button className="admin-primary-button" onClick={() => setStatusMessage('Settings updated in this demonstration session.')}>Save settings</button></div></section><div className="admin-backup-grid"><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Full Application Backup</h3><p>Captures all available application data and current configuration settings.</p></div></div><div className="admin-report-warning"><strong>Complete Available Data</strong><p>The backup includes available user accounts, deleted-user audit entries and configuration settings. Unconnected artwork, orders, sales, verification and delivery records are clearly identified.</p></div><div className="admin-button-row"><button className="admin-primary-button" onClick={createBackup}>Create Full Backup</button><button className="admin-secondary-button" onClick={downloadConfiguration}>Download Full Backup</button></div>{backups.length > 0 && <div className="admin-backup-list"><h4>Session snapshots</h4>{backups.map((backup) => <div key={backup.id}>{new Date(backup.createdAt).toLocaleString()} <span>Users: {backup.users.length} · Audit entries: {backup.deletedUsers.length}</span></div>)}</div>}</section><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Restore from Backup</h3><p>Recover missing data while protecting existing records and newer information.</p></div></div><label className="admin-field-label">Select Backup to Restore<select value={selectedBackup} onChange={(event) => setSelectedBackup(event.target.value)}><option value="">Select a snapshot</option>{backups.map((backup) => <option value={backup.id} key={backup.id}>{backup.createdAt}</option>)}</select></label><button className="admin-primary-button" onClick={restoreConfiguration} disabled={!selectedBackup}>Restore Backup</button></section></div></>
       case 'Artwork Management':
         return (
           <section className="admin-panel">
@@ -1256,6 +1266,23 @@ function buildFullBackup(): FullBackup {
                 {artworksLoading ? 'Refreshing...' : 'Refresh artwork'}
               </button>
             </div>
+
+            {adminArtworks.length > 0 && (
+              <div className="admin-button-row">
+                {['All', 'Draft', 'Published'].map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    className={artworkStatus === status ? 'admin-primary-button' : 'admin-secondary-button'}
+                    onClick={() => setArtworkStatus(status)}
+                  >
+                    {status} ({status === 'All'
+                      ? adminArtworks.length
+                      : adminArtworks.filter((a) => a.status.toLowerCase() === status.toLowerCase()).length})
+                  </button>
+                ))}
+              </div>
+            )}
 
             {artworksLoading && (
               <div className="admin-empty-state">
@@ -1284,7 +1311,7 @@ function buildFullBackup(): FullBackup {
 
             {adminArtworks.length > 0 && (
               <div className="admin-artwork-grid">
-                {adminArtworks.map((artwork) => {
+                {visibleArtworks.map((artwork) => {
                   const artist = users.find((user) => user.id === artwork.artistId)
                   const numericPrice = Number(artwork.price)
                   const formattedPrice = Number.isFinite(numericPrice)
@@ -1589,7 +1616,7 @@ function UserTable({ users, onEdit, onDelete, onPermanentlyDelete }: {
   }
 
   return (
-    <div id="admin-report-table" className="admin-table-wrap">
+    <div className="admin-table-wrap">
       <table>
         <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>{users.map((user) => (

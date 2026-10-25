@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AUTH_API_URL as API_URL } from '../lib/api'
 import './Auth.css'
-
-const API_URL = 'https://artist-wrld-backend.onrender.com/api/auth'
 
 type VerifyResponse = {
   message?: string

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
+import { API_URL } from '../lib/api'
 import './ArtworkDetails.css'
-
-const API_URL = 'https://artist-wrld-backend.onrender.com/api'
 
 type Artwork = {
   id: string
@@ -228,7 +227,7 @@ function ArtworkDetails() {
                 onClick={() => setIsFavorite((previous) => !previous)}
                 aria-pressed={isFavorite}
               >
-                {isFavorite ? '♥ Saved to Favorites' : '♡ Add to Favorites'}
+                {isFavorite ? 'â™¥ Saved to Favorites' : 'â™¡ Add to Favorites'}
               </button>
             </div>
 
@@ -244,7 +243,7 @@ function ArtworkDetails() {
               className="artwork-back-link"
               onClick={() => navigate(-1)}
             >
-              ← Back to previous page
+              â† Back to previous page
             </button>
           </div>
         </section>
@@ -269,7 +268,7 @@ function ArtworkDetails() {
           artist<span>-wrld</span><b>.</b>
         </Link>
         <p>Discover art. Connect with creativity.</p>
-        <span>© {new Date().getFullYear()} Artist-Wrld</span>
+        <span>Â© {new Date().getFullYear()} Artist-Wrld</span>
       </footer>
     </div>
   )

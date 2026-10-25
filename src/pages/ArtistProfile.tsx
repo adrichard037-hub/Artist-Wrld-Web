@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
+import { API_URL } from '../lib/api'
 import './ArtistProfile.css'
 
 type Artist = {
@@ -48,7 +49,7 @@ function ArtistProfile() {
         setError('')
 
         const response = await fetch(
-          `https://artist-wrld-backend.onrender.com/api/artists/public/${encodeURIComponent(artistSlug)}`,
+          `${API_URL}/artists/public/${encodeURIComponent(artistSlug)}`,
           { signal: controller.signal },
         )
 

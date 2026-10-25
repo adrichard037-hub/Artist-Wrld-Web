@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, useSearchParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
+import { API_URL } from '../lib/api'
 import './ArtworkGallery.css'
-
-const API_URL = 'https://artist-wrld-backend.onrender.com/api'
 
 type Artwork = {
   id: string
@@ -316,7 +315,7 @@ function ArtworkGallery() {
         <Link className="gallery-brand" to="/">
           artist<span>-wrld</span><b>.</b>
         </Link>
-        <span>© {new Date().getFullYear()} Artist-Wrld. Made for the love of art.</span>
+        <span>Â© {new Date().getFullYear()} Artist-Wrld. Made for the love of art.</span>
         
       </footer>
     </div>

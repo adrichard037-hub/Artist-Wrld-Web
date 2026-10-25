@@ -349,3 +349,871 @@
   overflow: auto;
   overscroll-behavior: contain;
 }
+
+
+/* =========================================================
+   Delivery workspace messages and server backup snapshots
+   Appended styles only — existing Overview and footer untouched
+   ========================================================= */
+
+.delivery-server-backup {
+  display: grid;
+  gap: 20px;
+}
+
+.delivery-snapshot-list {
+  display: grid;
+  gap: 0;
+  margin-top: 12px;
+  border: 1px solid var(--delivery-line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.delivery-snapshot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 18px;
+  border-bottom: 1px solid var(--delivery-line);
+}
+
+.delivery-snapshot-row:last-child {
+  border-bottom: 0;
+}
+
+.delivery-snapshot-details {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.delivery-snapshot-details strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.delivery-snapshot-details span {
+  color: var(--delivery-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.delivery-snapshot-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.delivery-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid #b64b42;
+  border-radius: 5px;
+  background: transparent;
+  color: #a83d35;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.delivery-danger-button:hover {
+  background: #fff0ee;
+}
+
+.delivery-dashboard button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.delivery-message-composer {
+  margin-bottom: 20px;
+}
+
+.delivery-message-composer textarea,
+.delivery-message-body-field {
+  width: 100%;
+  min-height: 125px;
+  padding: 12px;
+  border: 1px solid #ded9d0;
+  border-radius: 5px;
+  background: #fff;
+  color: #292821;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.delivery-message-composer input {
+  width: 100%;
+}
+
+.delivery-message-list {
+  min-width: 0;
+}
+
+.delivery-message-items {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.delivery-message-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--delivery-line);
+  border-radius: 7px;
+  background: var(--delivery-paper);
+}
+
+.delivery-message-unread {
+  border-left: 3px solid var(--delivery-accent);
+}
+
+.delivery-message-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.delivery-message-meta > div:first-child {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.delivery-message-meta strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.delivery-message-meta small {
+  color: var(--delivery-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.delivery-message-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: #eeeae2;
+  color: #5d5548;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.delivery-message-badge.received {
+  background: #e8f1e6;
+  color: #315b37;
+}
+
+.delivery-message-badge.sent {
+  background: #eee8f6;
+  color: #62477f;
+}
+
+.delivery-message-participants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 12px;
+  color: var(--delivery-muted);
+  font-size: 10px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.delivery-message-content {
+  margin: 0;
+  color: var(--delivery-ink);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.delivery-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--delivery-line);
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-message-composer textarea,
+.delivery-dashboard[data-theme="dark"] .delivery-message-body-field {
+  background: #20211d;
+  color: var(--delivery-ink);
+  border-color: #504e46;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-message-badge {
+  background: #3a3933;
+  color: #e4dfd3;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-message-badge.received {
+  background: #263d2a;
+  color: #b8dfbc;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-message-badge.sent {
+  background: #3a3048;
+  color: #d6c1f2;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-danger-button {
+  color: #ffaaa2;
+  border-color: #9b514a;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-danger-button:hover {
+  background: #3d2725;
+}
+
+@media (max-width: 760px) {
+  .delivery-snapshot-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 13px;
+    padding: 15px;
+  }
+
+  .delivery-snapshot-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .delivery-message-items {
+    padding: 12px;
+  }
+
+  .delivery-message-card {
+    padding: 14px;
+  }
+
+  .delivery-message-meta {
+    flex-direction: column;
+  }
+
+  .delivery-message-actions {
+    justify-content: stretch;
+  }
+
+  .delivery-message-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .delivery-snapshot-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .delivery-snapshot-actions button {
+    width: 100%;
+  }
+
+  .delivery-message-composer .delivery-form-actions {
+    flex-direction: column;
+  }
+
+  .delivery-message-composer .delivery-form-actions button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   DELIVERY WORKSPACE SECTION REDESIGN
+   Scoped to non-Overview section components.
+   Overview JSX and footer styling remain unchanged.
+   ========================================================= */
+
+/* Clearer section introductions */
+.delivery-page-intro {
+  position: relative;
+  padding: 5px 0 18px;
+  border-bottom: 1px solid var(--delivery-line);
+}
+
+.delivery-page-intro .delivery-eyebrow {
+  display: inline-block;
+  padding: 6px 9px;
+  border: 1px solid var(--delivery-line);
+  border-radius: 4px;
+  background: var(--delivery-paper);
+}
+
+.delivery-page-intro h2 {
+  margin-top: 13px;
+  margin-bottom: 9px;
+}
+
+.delivery-page-intro p {
+  max-width: 650px;
+}
+
+/* More deliberate panel hierarchy */
+.delivery-page-intro + .delivery-panel {
+  margin-top: 22px;
+}
+
+.delivery-panel {
+  overflow: hidden;
+  box-shadow: 0 5px 18px rgba(40, 34, 25, 0.035);
+}
+
+.delivery-panel-heading {
+  min-height: 76px;
+}
+
+.delivery-panel-heading h3 {
+  letter-spacing: -0.2px;
+}
+
+.delivery-panel-heading p {
+  max-width: 620px;
+}
+
+/* Delivery records: clearer scanning and row interaction */
+.delivery-table-wrap {
+  border-radius: 0 0 8px 8px;
+}
+
+.delivery-table {
+  font-variant-numeric: tabular-nums;
+}
+
+.delivery-table th {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  letter-spacing: 0.9px;
+}
+
+.delivery-table tbody tr {
+  transition: background-color 160ms ease;
+}
+
+.delivery-table tbody tr:hover {
+  background: #faf7f2;
+}
+
+.delivery-table td {
+  line-height: 1.55;
+}
+
+.delivery-table td strong {
+  font-weight: 700;
+}
+
+/* Pickup & drop-off: stronger route cards */
+.delivery-route-card {
+  position: relative;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.delivery-route-card:hover {
+  border-color: #c9b39d;
+  box-shadow: 0 8px 24px rgba(40, 34, 25, 0.07);
+}
+
+.delivery-route-heading {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--delivery-line);
+}
+
+.delivery-route-heading h3 {
+  font-size: 16px;
+  letter-spacing: -0.3px;
+}
+
+.delivery-route-points {
+  margin-top: 21px;
+  margin-bottom: 20px;
+  padding: 17px;
+  border-radius: 7px;
+  background: #faf7f2;
+}
+
+.delivery-route-points strong {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.delivery-route-date {
+  padding-top: 12px;
+  border-top: 1px solid var(--delivery-line);
+  line-height: 1.7;
+}
+
+/* Empty states should look intentional, not unfinished */
+.delivery-empty {
+  margin-bottom: 18px;
+  border: 1px dashed var(--delivery-line);
+  border-radius: 8px;
+}
+
+.delivery-empty strong {
+  margin-bottom: 6px;
+}
+
+/* Profile: improve form rhythm and photo presentation */
+.delivery-form-panel {
+  border-radius: 10px;
+}
+
+.delivery-form-panel > .delivery-panel-heading {
+  padding: 23px 24px;
+}
+
+.delivery-form-panel .delivery-form {
+  gap: 22px;
+  padding: 24px;
+}
+
+.delivery-profile-photo-section {
+  padding: 18px;
+  border: 1px solid var(--delivery-line);
+  border-radius: 8px;
+  background: var(--delivery-paper);
+}
+
+.delivery-profile-photo-preview {
+  overflow: hidden;
+  border: 3px solid #e7d7c8;
+  box-shadow: 0 3px 12px rgba(40, 34, 25, 0.08);
+}
+
+/* Settings: clearer grouping and control alignment */
+.delivery-settings-row {
+  min-height: 88px;
+  transition: background-color 160ms ease;
+}
+
+.delivery-settings-row:hover {
+  background: #faf8f4;
+}
+
+.delivery-settings-row > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.delivery-settings-row strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.delivery-settings-row select {
+  min-width: 145px;
+}
+
+/* Messages: make composing and reading feel like separate tasks */
+.delivery-message-composer,
+.delivery-message-list {
+  border-radius: 10px;
+}
+
+.delivery-message-composer .delivery-form {
+  gap: 20px;
+}
+
+.delivery-message-composer .delivery-form label {
+  line-height: 1.5;
+}
+
+.delivery-message-composer input,
+.delivery-message-composer textarea {
+  box-sizing: border-box;
+  border-radius: 7px;
+}
+
+.delivery-message-composer input:focus,
+.delivery-message-composer textarea:focus {
+  outline: 2px solid #cba58d;
+  outline-offset: 1px;
+}
+
+.delivery-message-card {
+  border-radius: 8px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.delivery-message-card:hover {
+  border-color: #cdb9a7;
+  box-shadow: 0 4px 14px rgba(40, 34, 25, 0.045);
+}
+
+.delivery-message-content {
+  overflow-wrap: anywhere;
+}
+
+/* Backup management: distinct snapshot actions */
+.delivery-server-backup,
+.delivery-backup-panel {
+  border-radius: 10px;
+}
+
+.delivery-snapshot-list {
+  padding: 0 20px;
+}
+
+.delivery-snapshot-row {
+  gap: 20px;
+  padding: 19px 2px;
+}
+
+.delivery-snapshot-details {
+  flex: 1;
+}
+
+.delivery-snapshot-details strong {
+  font-size: 13px;
+}
+
+.delivery-snapshot-actions button {
+  min-width: 88px;
+}
+
+/* Accessible keyboard focus on section controls */
+.delivery-dashboard .delivery-primary-button:focus-visible,
+.delivery-dashboard .delivery-secondary-button:focus-visible,
+.delivery-dashboard .delivery-text-button:focus-visible,
+.delivery-dashboard .delivery-settings-row select:focus-visible {
+  outline: 2px solid #b47a5b;
+  outline-offset: 3px;
+}
+
+/* Dark-mode equivalents for redesigned section surfaces */
+.delivery-dashboard[data-theme="dark"] .delivery-page-intro .delivery-eyebrow {
+  background: var(--delivery-paper);
+  border-color: var(--delivery-line);
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-table tbody tr:hover {
+  background: #252620;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-route-points {
+  background: #20211d;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-profile-photo-section {
+  background: #20211d;
+  border-color: var(--delivery-line);
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-settings-row:hover {
+  background: #20211d;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-route-card:hover,
+.delivery-dashboard[data-theme="dark"] .delivery-message-card:hover {
+  border-color: #80624f;
+}
+
+@media (max-width: 760px) {
+  .delivery-page-intro {
+    padding-bottom: 15px;
+  }
+
+  .delivery-page-intro h2 {
+    font-size: 28px;
+  }
+
+  .delivery-route-card {
+    padding: 16px;
+  }
+
+  .delivery-route-points {
+    padding: 14px;
+  }
+
+  .delivery-form-panel .delivery-form {
+    padding: 17px;
+  }
+
+  .delivery-form-panel > .delivery-panel-heading {
+    padding: 17px;
+  }
+
+  .delivery-snapshot-list {
+    padding: 0 15px;
+  }
+
+  .delivery-snapshot-actions button {
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   DELIVERY CARD MANAGEMENT LAYOUT
+   Used by My Deliveries only.
+   Overview, footer, and Delivery History table are untouched.
+   ========================================================= */
+
+.delivery-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px;
+}
+
+.delivery-work-card {
+  min-width: 0;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid var(--delivery-line);
+  border-radius: 9px;
+  background: var(--delivery-paper);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.delivery-work-card:hover {
+  transform: translateY(-2px);
+  border-color: #c9b39d;
+  box-shadow: 0 9px 24px rgba(40, 34, 25, 0.07);
+}
+
+.delivery-work-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--delivery-line);
+}
+
+.delivery-work-card-reference,
+.delivery-work-card-label {
+  color: var(--delivery-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+.delivery-work-card-reference {
+  overflow-wrap: anywhere;
+}
+
+.delivery-work-card-artwork {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 20px 0;
+}
+
+.delivery-work-card-artwork-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  place-items: center;
+  border: 1px solid #e5d5c4;
+  border-radius: 7px;
+  background: #f5eee5;
+  color: #93694e;
+  font-family: Georgia, serif;
+  font-size: 28px;
+}
+
+.delivery-work-card-artwork > div {
+  min-width: 0;
+}
+
+.delivery-work-card-artwork h3 {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.delivery-work-card-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 14px;
+  padding: 17px 0;
+  border-top: 1px solid var(--delivery-line);
+  border-bottom: 1px solid var(--delivery-line);
+}
+
+.delivery-work-card-details > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.delivery-work-card-details > div:nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+.delivery-work-card-details strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.delivery-work-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding-top: 17px;
+}
+
+.delivery-work-card-progress {
+  display: flex;
+  flex: 1 1 140px;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--delivery-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.delivery-work-card-progress-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #c19b55;
+}
+
+.delivery-work-card-progress-dot.is-complete {
+  background: #55845a;
+}
+
+.delivery-work-card-status-control {
+  display: flex;
+  min-width: 125px;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.delivery-work-card-status-control > span {
+  color: var(--delivery-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.delivery-work-card-status-control select {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--delivery-line);
+  border-radius: 5px;
+  background: var(--delivery-paper);
+  color: var(--delivery-ink);
+  font: inherit;
+  font-size: 11px;
+}
+
+.delivery-work-card-completed {
+  padding: 10px 0;
+  color: #47734a;
+  font-size: 11px;
+}
+
+.delivery-cards-empty {
+  grid-column: 1 / -1;
+  padding: 48px 24px;
+}
+
+.delivery-cards-empty-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  place-items: center;
+  border: 1px solid var(--delivery-line);
+  border-radius: 50%;
+  background: var(--delivery-paper);
+  font-size: 25px;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-work-card {
+  background: #20211d;
+  border-color: var(--delivery-line);
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-work-card:hover {
+  border-color: #80624f;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-work-card-artwork-icon {
+  background: #302820;
+  border-color: #514237;
+  color: #e3b092;
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-work-card-status-control select {
+  background: #20211d;
+  color: var(--delivery-ink);
+  border-color: var(--delivery-line);
+}
+
+.delivery-dashboard[data-theme="dark"] .delivery-work-card-completed {
+  color: #a9d4a8;
+}
+
+@media (max-width: 1000px) {
+  .delivery-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .delivery-cards-grid {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .delivery-work-card {
+    padding: 15px;
+  }
+
+  .delivery-work-card-artwork {
+    padding: 16px 0;
+  }
+
+  .delivery-work-card-artwork h3 {
+    font-size: 17px;
+  }
+
+  .delivery-work-card-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 13px;
+  }
+
+  .delivery-work-card-status-control {
+    width: 100%;
+  }
+}

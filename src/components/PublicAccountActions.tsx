@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const API_URL = 'https://artist-wrld-backend.onrender.com/api'
+import { API_URL } from '../lib/api'
 
 type SupportedRole = 'ADMIN' | 'ARTIST' | 'BUYER'
 

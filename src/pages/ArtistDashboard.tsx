@@ -1,6 +1,7 @@
-import { logoutToLogin } from '../lib/logout'
+﻿import { logoutToLogin } from '../lib/logout'
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { API_URL } from '../lib/api'
 import './ArtistDashboard.css'
 
 type Artwork = {
@@ -77,7 +78,6 @@ const formatMoney = (amount: number) =>
   `GH\u20B5 ${amount.toLocaleString('en-GH', { maximumFractionDigits: 2 })}`
 
 function ArtistDashboard() {
-  const api = "https://artist-wrld-backend.onrender.com/api";
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -141,7 +141,7 @@ function ArtistDashboard() {
 
     async function loadProfile() {
       const response = await fetch(
-        `${api}/dashboard/profile`,
+        `${API_URL}/dashboard/profile`,
         requestOptions,
       );
 
@@ -172,7 +172,7 @@ function ArtistDashboard() {
     }
 
     async function loadArtworks() {
-      const response = await fetch(`${api}/artworks`, requestOptions);
+      const response = await fetch(`${API_URL}/artworks`, requestOptions);
 
       if (!response.ok) {
         setArtworks([]);
@@ -194,7 +194,7 @@ function ArtistDashboard() {
 
     async function loadPreferences() {
       const response = await fetch(
-        `${api}/dashboard/preferences`,
+        `${API_URL}/dashboard/preferences`,
         requestOptions,
       );
 
@@ -444,7 +444,7 @@ function ArtistDashboard() {
     }
 
     try {
-      const response = await fetch("https://artist-wrld-backend.onrender.com/api/artworks", {
+      const response = await fetch(`${API_URL}/artworks`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -509,7 +509,7 @@ function ArtistDashboard() {
 
     try {
       const response = await fetch(
-        `https://artist-wrld-backend.onrender.com/api/artworks/${encodeURIComponent(id)}`,
+        `${API_URL}/artworks/${encodeURIComponent(id)}`,
         {
           method: "PATCH",
           credentials: "include",
@@ -549,7 +549,7 @@ function ArtistDashboard() {
 
     try {
       const response = await fetch(
-        `https://artist-wrld-backend.onrender.com/api/artworks/${encodeURIComponent(id)}`,
+        `${API_URL}/artworks/${encodeURIComponent(id)}`,
         {
           method: "DELETE",
           credentials: "include",

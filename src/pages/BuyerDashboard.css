@@ -339,9 +339,12 @@
 .buyer-table td strong, .buyer-table td small { display: block; }
 .buyer-table td small { margin-top: 4px; color: var(--buyer-muted); font-size: 10px; }
 .buyer-status { display: inline-block; padding: 5px 8px; border-radius: 4px; font-size: 9px; }
+.status-pending { background: #f5eee0; color: #80652d; }
+.status-paid { background: #eaf3e9; color: #32623a; }
 .status-processing { background: #f5eee0; color: #80652d; }
 .status-shipped { background: #e7eff9; color: #315b8b; }
 .status-delivered { background: #eaf3e9; color: #32623a; }
+.status-cancelled { background: #f8e8e8; color: #8f2929; }
 .buyer-page-intro { margin-bottom: 24px; }
 .buyer-page-intro h2 { font-size: clamp(27px, 3vw, 35px); }
 .buyer-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
@@ -356,6 +359,48 @@
 }
 .buyer-toolbar input { flex: 1; min-width: 200px; }
 .buyer-toolbar select { min-width: 145px; }
+.buyer-card-actions { display: flex; align-items: center; gap: 12px; }
+.buyer-card-actions button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--buyer-accent);
+  font-size: 10px;
+  text-decoration: underline;
+}
+.buyer-order-form, .buyer-message-form { display: grid; gap: 14px; padding: 22px; }
+.buyer-order-form h3, .buyer-message-form h3 { margin: 0; font-size: 15px; }
+.buyer-order-form p, .buyer-message-form > p { margin: 6px 0 0; color: var(--buyer-muted); font-size: 11px; line-height: 1.6; }
+.buyer-order-form label, .buyer-message-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--buyer-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.buyer-order-form textarea, .buyer-message-form input, .buyer-message-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 11px 12px;
+  border: 1px solid var(--buyer-line);
+  border-radius: 5px;
+  background: var(--buyer-paper);
+  color: var(--buyer-ink);
+  font: inherit;
+}
+.buyer-order-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.buyer-message-form .buyer-error { margin: 0; }
+.buyer-message-form > .buyer-view-link { justify-self: start; }
+.buyer-message-list { margin-top: 28px; }
+.buyer-message-list > h3 { margin: 0 0 14px; font-size: 17px; }
+.buyer-message-card { padding: 18px; }
+.buyer-message-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--buyer-muted); font-size: 10px; }
+.buyer-message-meta time { margin-left: auto; }
+.buyer-message-meta strong { color: var(--buyer-accent); }
+.buyer-message-card h4 { margin: 12px 0 5px; font-size: 14px; }
+.buyer-message-card p { color: var(--buyer-ink); font-size: 12px; line-height: 1.7; white-space: pre-wrap; }
+.buyer-message-card .buyer-message-participant { margin: 0; color: var(--buyer-muted); font-size: 10px; }
+.buyer-message-card .buyer-secondary-button { margin-top: 8px; }
 .buyer-empty {
   padding: 40px 22px;
   text-align: center;

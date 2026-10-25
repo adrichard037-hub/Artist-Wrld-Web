@@ -1,6 +1,8 @@
+import { API_URL } from './api'
+
 export async function logoutToLogin(): Promise<void> {
   try {
-    await fetch('https://artist-wrld-backend.onrender.com/api/auth/logout', {
+    await fetch(`${API_URL}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: {
