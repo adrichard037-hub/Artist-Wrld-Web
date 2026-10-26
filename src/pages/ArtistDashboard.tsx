@@ -1,4 +1,4 @@
-﻿import { logoutToLogin } from '../lib/logout'
+import { logoutToLogin } from '../lib/logout'
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_URL } from '../lib/api'
@@ -853,7 +853,7 @@ function ArtistDashboard() {
     }
 
     try {
-      const response = await fetch(`${api}/dashboard/profile`, {
+      const response = await fetch(`${API_URL}/dashboard/profile`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -900,7 +900,7 @@ function ArtistDashboard() {
     setTheme(value);
 
     try {
-      const response = await fetch(`${api}/dashboard/preferences`, {
+      const response = await fetch(`${API_URL}/dashboard/preferences`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
