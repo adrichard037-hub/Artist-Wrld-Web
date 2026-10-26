@@ -315,7 +315,7 @@ function ArtworkGallery() {
         <Link className="gallery-brand" to="/">
           artist<span>-wrld</span><b>.</b>
         </Link>
-        <span>Â© {new Date().getFullYear()} Artist-Wrld. Made for the love of art.</span>
+        <span>© {new Date().getFullYear()} Artist-Wrld. Made for the love of art.</span>
         
       </footer>
     </div>

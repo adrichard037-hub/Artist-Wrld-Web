@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
 import { API_URL } from '../lib/api'
@@ -153,7 +153,7 @@ function Artists() {
         <Link to="/" className="artists-brand">
           artist<span>-wrld</span><b>.</b>
         </Link>
-        <span>Â© 2026 Artist-Wrld. Made for the love of art.</span>
+        <span>© 2026 Artist-Wrld. Made for the love of art.</span>
       </footer>
     </main>
   )

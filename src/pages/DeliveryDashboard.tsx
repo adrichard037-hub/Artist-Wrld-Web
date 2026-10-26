@@ -1323,7 +1323,7 @@ function DeliveryDashboard() {
               onClick={() => void createServerBackup()}
               disabled={backupBusy}
             >
-              {backupBusy ? 'Please waitâ€¦' : 'Create server backup'}
+              {backupBusy ? 'Please wait…' : 'Create server backup'}
             </button>
           </div>
 
@@ -1332,7 +1332,7 @@ function DeliveryDashboard() {
           <div className="delivery-snapshot-list">
             {snapshotsLoading ? (
               <div className="delivery-empty">
-                <p>Loading saved backupsâ€¦</p>
+                <p>Loading saved backups…</p>
               </div>
             ) : snapshots.length === 0 ? (
               <div className="delivery-empty">
@@ -1568,7 +1568,7 @@ function DeliveryDashboard() {
                     onChange={(event) => setMessageBody(event.target.value)}
                     maxLength={10000}
                     rows={5}
-                    placeholder="Write your delivery-related messageâ€¦"
+                    placeholder="Write your delivery-related message…"
                     required
                   />
                 </label>
@@ -1579,7 +1579,7 @@ function DeliveryDashboard() {
                     className="delivery-primary-button"
                     disabled={messageBusy}
                   >
-                    {messageBusy ? 'Sendingâ€¦' : 'Send message'}
+                    {messageBusy ? 'Sending…' : 'Send message'}
                   </button>
                 </div>
                 <p className="delivery-form-note">
@@ -1606,13 +1606,13 @@ function DeliveryDashboard() {
                   }}
                   disabled={messagesLoading}
                 >
-                  {messagesLoading ? 'Refreshingâ€¦' : 'Refresh'}
+                  {messagesLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
               </div>
 
               {messagesLoading && messages.length === 0 ? (
                 <div className="delivery-empty">
-                  <p>Loading messagesâ€¦</p>
+                  <p>Loading messages…</p>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="delivery-empty">

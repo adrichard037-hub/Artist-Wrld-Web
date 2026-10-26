@@ -47,3 +47,7 @@ dist-ssr
 *.security-report-backup-*
 *.symbols-backup-*
 
+
+*.bak
+*.backup-*
+*.zip

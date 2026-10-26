@@ -227,7 +227,7 @@ function ArtworkDetails() {
                 onClick={() => setIsFavorite((previous) => !previous)}
                 aria-pressed={isFavorite}
               >
-                {isFavorite ? 'â™¥ Saved to Favorites' : 'â™¡ Add to Favorites'}
+                {isFavorite ? '♥ Saved to Favorites' : '♡ Add to Favorites'}
               </button>
             </div>
 
@@ -243,7 +243,7 @@ function ArtworkDetails() {
               className="artwork-back-link"
               onClick={() => navigate(-1)}
             >
-              â† Back to previous page
+              ← Back to previous page
             </button>
           </div>
         </section>
@@ -268,7 +268,7 @@ function ArtworkDetails() {
           artist<span>-wrld</span><b>.</b>
         </Link>
         <p>Discover art. Connect with creativity.</p>
-        <span>Â© {new Date().getFullYear()} Artist-Wrld</span>
+        <span>© {new Date().getFullYear()} Artist-Wrld</span>
       </footer>
     </div>
   )

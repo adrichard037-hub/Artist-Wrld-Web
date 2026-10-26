@@ -273,7 +273,7 @@ function AdminDashboard() {
       setArtworksMessage('')
 
       try {
-        const response = await fetch(API_BASE + '/api/artworks', {
+        const response = await fetch(`${API_URL}/artworks`, {
           method: 'GET',
           credentials: 'include',
           cache: 'no-store',
