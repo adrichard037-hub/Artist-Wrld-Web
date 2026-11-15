@@ -15,6 +15,7 @@ type ApiAssignment = {
   scheduledDate: string | null
   createdAt?: string
   status: string
+  artworkImage?: string | null
 }
 
 async function getApiError(response: Response): Promise<string> {
@@ -58,6 +59,7 @@ type Delivery = {
   pickup: string
   destination: string
   date: string
+  image?: string
   status: 'Assigned' | 'Picked Up' | 'In Transit' | 'Delivered'
 }
 
@@ -198,6 +200,7 @@ async function loadDeliveryAssignments(
         pickup: assignment.pickup,
         destination: assignment.destination,
         date: dateValue ? dateValue.slice(0, 10) : 'Not scheduled',
+        image: assignment.artworkImage || undefined,
         status: normalizeDeliveryStatus(assignment.status),
       }
     })
@@ -1063,8 +1066,20 @@ function DeliveryDashboard() {
             </div>
 
             <div className="delivery-work-card-artwork">
-              <span className="delivery-work-card-artwork-icon" aria-hidden="true">
-                &#x25C7;
+              <span
+                className="delivery-work-card-artwork-icon"
+                aria-hidden="true"
+                style={delivery.image ? { overflow: 'hidden', padding: 0 } : undefined}
+              >
+                {delivery.image ? (
+                  <img
+                    src={delivery.image}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <>&#x25C7;</>
+                )}
               </span>
               <div>
                 <span className="delivery-work-card-label">ARTWORK</span>
@@ -1779,7 +1794,21 @@ function DeliveryDashboard() {
 function DeliveryRow({ delivery }: { delivery: Delivery }) {
   return (
     <div className="delivery-list-row">
-      <div className="delivery-artwork-placeholder" aria-hidden="true">&#x2727;</div>
+      <div
+        className="delivery-artwork-placeholder"
+        aria-hidden="true"
+        style={delivery.image ? { overflow: 'hidden', padding: 0 } : undefined}
+      >
+        {delivery.image ? (
+          <img
+            src={delivery.image}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <>&#x2727;</>
+        )}
+      </div>
       <div className="delivery-row-main">
         <strong>{delivery.artwork}</strong>
         <span>{delivery.id} &middot; {delivery.destination}</span>
