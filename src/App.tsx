@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Link, useNavigate, useLocation, useNavigationType, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import AdminDashboard from './pages/AdminDashboard'
@@ -16,6 +16,7 @@ import About from './pages/About'
 import ScrollToTop from './components/ScrollToTop'
 import StatusPage from './pages/StatusPage'
 import { API_URL } from './lib/api'
+import { readPublicAccountCache, savePublicAccountCache, clearPublicAccountCache } from './lib/public-account-cache'
 import './App.css'
 
 type HomepageRole = 'ADMIN' | 'ARTIST' | 'BUYER'
@@ -64,7 +65,7 @@ function HomePage() {
   const [featuredArtists, setFeaturedArtists] = useState<HomepageArtist[]>([])
   const [artistsLoading, setArtistsLoading] = useState(true)
   const [artistsError, setArtistsError] = useState('')
-  const [homepageUser, setHomepageUser] = useState<HomepageUser | null>(cachedHomepageUser)
+  const [homepageUser, setHomepageUser] = useState<HomepageUser | null>(() => readPublicAccountCache() ?? cachedHomepageUser)
 
   const artworkCarouselRef = useRef<HTMLDivElement | null>(null)
   const artistCarouselRef = useRef<HTMLDivElement | null>(null)
@@ -219,19 +220,16 @@ function HomePage() {
         const response = await fetch(`${API_URL}/auth/me`, {
           method: 'GET',
           credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-          },
+          headers: { Accept: 'application/json' },
           signal: controller.signal,
         })
 
         if (!response.ok) {
           if (response.status === 401) {
             cachedHomepageUser = null
-            setHomepageUser(null)
+            clearPublicAccountCache()
+            if (!controller.signal.aborted) setHomepageUser(null)
           }
-
-          // Keep the current account during temporary errors such as 429.
           return
         }
 
@@ -251,15 +249,24 @@ function HomePage() {
           user?.role &&
           ['ADMIN', 'ARTIST', 'BUYER'].includes(user.role)
         ) {
-          let savedProfileImage: string | null = null
+          const verifiedUser: HomepageUser = {
+            fullName: user.fullName,
+            username: user.username,
+            role: user.role as HomepageRole,
+          }
 
+          if (!controller.signal.aborted) {
+            cachedHomepageUser = verifiedUser
+            savePublicAccountCache(verifiedUser)
+            setHomepageUser(verifiedUser)
+          }
+
+          // Profile image loads separately; it does not delay the account link.
           try {
             const profileResponse = await fetch(`${API_URL}/dashboard/profile`, {
               method: 'GET',
               credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-              },
+              headers: { Accept: 'application/json' },
               signal: controller.signal,
             })
 
@@ -271,39 +278,35 @@ function HomePage() {
                 } | null
               } = await profileResponse.json()
 
-              savedProfileImage =
+              const profileImage =
                 profileResult.profile?.profileImage ??
                 profileResult.profile?.avatar ??
                 null
+
+              if (!controller.signal.aborted) {
+                const updatedUser: HomepageUser = {
+                  ...verifiedUser,
+                  profileImage,
+                }
+                cachedHomepageUser = updatedUser
+                savePublicAccountCache(updatedUser)
+                setHomepageUser(updatedUser)
+              }
             }
           } catch (error) {
-            if (error instanceof Error && error.name === 'AbortError') {
-              return
-            }
-          }
-
-          if (!controller.signal.aborted) {
-            cachedHomepageUser = {
-              fullName: user.fullName,
-              username: user.username,
-              profileImage: savedProfileImage,
-              role: user.role as HomepageRole,
-            }
-
-            setHomepageUser(cachedHomepageUser)
+            if (error instanceof Error && error.name === 'AbortError') return
           }
         } else {
-          // Delivery Man is intentionally excluded from this feature.
+          // Delivery Man is intentionally excluded from public account actions.
           cachedHomepageUser = null
-          setHomepageUser(null)
+          clearPublicAccountCache()
+          if (!controller.signal.aborted) setHomepageUser(null)
         }
       } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          return
-        }
+        if (error instanceof Error && error.name === 'AbortError') return
 
         if (!controller.signal.aborted) {
-          setHomepageUser(cachedHomepageUser)
+          setHomepageUser(readPublicAccountCache() ?? cachedHomepageUser)
         }
       }
     }

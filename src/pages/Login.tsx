@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AUTH_API_URL as API_URL } from '../lib/api'
+import { savePublicAccountCache, clearPublicAccountCache } from '../lib/public-account-cache'
 import './Auth.css'
 
 type LoginResponse = {
@@ -86,6 +87,16 @@ function Login() {
         ARTIST: '/artist-dashboard',
         BUYER: '/buyer-dashboard',
         DELIVERY_MAN: '/delivery-dashboard',
+      }
+
+      if (data.user.role === 'DELIVERY_MAN') {
+        clearPublicAccountCache()
+      } else {
+        savePublicAccountCache({
+          fullName: data.user.fullName,
+          username: data.user.username,
+          role: data.user.role,
+        })
       }
 
       navigate(dashboardRoutes[data.user.role], { replace: true })

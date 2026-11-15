@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AUTH_API_URL as API_URL } from '../lib/api'
+import { savePublicAccountCache, clearPublicAccountCache } from '../lib/public-account-cache'
 import './Auth.css'
 
 type VerifyResponse = {
@@ -83,6 +84,16 @@ function VerifyTwoFactor() {
       }
 
       sessionStorage.removeItem('artist-wrld-login-challenge')
+      if (result.user.role === 'DELIVERY_MAN') {
+        clearPublicAccountCache()
+      } else {
+        savePublicAccountCache({
+          fullName: result.user.fullName,
+          username: result.user.username,
+          role: result.user.role,
+        })
+      }
+
       navigate(dashboardRoutes[result.user.role], { replace: true })
     } catch {
       setError('Unable to connect to Artist-Wrld. Check that the backend is running.')

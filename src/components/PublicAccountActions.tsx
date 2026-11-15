@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '../lib/api'
+import { readPublicAccountCache, savePublicAccountCache, clearPublicAccountCache } from '../lib/public-account-cache'
 
 type SupportedRole = 'ADMIN' | 'ARTIST' | 'BUYER'
 
@@ -24,7 +25,7 @@ const dashboardPaths: Record<SupportedRole, string> = {
 }
 
 function PublicAccountActions({ variant }: Props) {
-  const [user, setUser] = useState<SessionUser | null>(cachedPublicUser)
+  const [user, setUser] = useState<SessionUser | null>(() => readPublicAccountCache() ?? cachedPublicUser)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -34,22 +35,16 @@ function PublicAccountActions({ variant }: Props) {
         const response = await fetch(`${API_URL}/auth/me`, {
           method: 'GET',
           credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-          },
+          headers: { Accept: 'application/json' },
           signal: controller.signal,
         })
 
         if (!response.ok) {
           if (response.status === 401) {
             cachedPublicUser = null
-
-            if (!controller.signal.aborted) {
-              setUser(null)
-            }
+            clearPublicAccountCache()
+            if (!controller.signal.aborted) setUser(null)
           }
-
-          // Preserve the existing account link for temporary errors.
           return
         }
 
@@ -69,15 +64,24 @@ function PublicAccountActions({ variant }: Props) {
           sessionUser?.role &&
           ['ADMIN', 'ARTIST', 'BUYER'].includes(sessionUser.role)
         ) {
-          let savedProfileImage: string | null = null
+          const verifiedUser: SessionUser = {
+            fullName: sessionUser.fullName,
+            username: sessionUser.username,
+            role: sessionUser.role as SupportedRole,
+          }
 
+          if (!controller.signal.aborted) {
+            cachedPublicUser = verifiedUser
+            savePublicAccountCache(verifiedUser)
+            setUser(verifiedUser)
+          }
+
+          // Load the avatar without holding back the account link.
           try {
             const profileResponse = await fetch(`${API_URL}/dashboard/profile`, {
               method: 'GET',
               credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-              },
+              headers: { Accept: 'application/json' },
               signal: controller.signal,
             })
 
@@ -89,42 +93,35 @@ function PublicAccountActions({ variant }: Props) {
                 } | null
               } = await profileResponse.json()
 
-              savedProfileImage =
+              const profileImage =
                 profileResult.profile?.profileImage ??
                 profileResult.profile?.avatar ??
                 null
+
+              if (!controller.signal.aborted) {
+                const updatedUser: SessionUser = {
+                  ...verifiedUser,
+                  profileImage,
+                }
+                cachedPublicUser = updatedUser
+                savePublicAccountCache(updatedUser)
+                setUser(updatedUser)
+              }
             }
           } catch (error) {
-            if (error instanceof Error && error.name === 'AbortError') {
-              return
-            }
-          }
-
-          if (!controller.signal.aborted) {
-            const verifiedUser: SessionUser = {
-              fullName: sessionUser.fullName,
-              username: sessionUser.username,
-              profileImage: savedProfileImage,
-              role: sessionUser.role as SupportedRole,
-            }
-
-            cachedPublicUser = verifiedUser
-            setUser(verifiedUser)
+            if (error instanceof Error && error.name === 'AbortError') return
           }
         } else {
-          // Delivery Man is intentionally excluded, matching the homepage.
+          // Delivery Man is intentionally excluded from public account actions.
           cachedPublicUser = null
-          setUser(null)
+          clearPublicAccountCache()
+          if (!controller.signal.aborted) setUser(null)
         }
       } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          return
-        }
+        if (error instanceof Error && error.name === 'AbortError') return
 
-        // Keep the existing account link during temporary network failures.
-        // A confirmed 401 is handled separately in the response branch.
         if (!controller.signal.aborted) {
-          setUser(cachedPublicUser)
+          setUser(readPublicAccountCache() ?? cachedPublicUser)
         }
       }
     }
