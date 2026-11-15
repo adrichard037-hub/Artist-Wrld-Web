@@ -31,6 +31,8 @@ type BuyerOrder = {
   artworkId: string
   artworkTitle: string
   artistId: string
+  artistName?: string
+  deliveryStatus?: string | null
   quantity: number
   unitPrice: number | string
   total: number | string
@@ -552,7 +554,7 @@ function BuyerDashboard() {
                   <td><strong>{order.id}</strong></td>
                   <td>
                     <strong>{order.artworkTitle}</strong>
-                    <small>Artist account: {order.artistId}</small>
+                    <small>Artist: {order.artistName ?? order.artistId}{order.deliveryStatus ? ` - Delivery: ${order.deliveryStatus}` : ''}</small>
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>{formatMoney(Number(order.total))}</td>

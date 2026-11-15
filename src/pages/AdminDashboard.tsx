@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_URL } from '../lib/api'
 import './AdminDashboard.css'
+import AdminOrdersPanel from './AdminOrdersPanel'
+import AdminDeliveriesPanel from './AdminDeliveriesPanel'
 
 type Role = 'Admin' | 'Artist' | 'Buyer' | 'Delivery Man'
 type AccountStatus = 'Active' | 'Inactive'
@@ -1381,7 +1383,7 @@ function buildFullBackup(): FullBackup {
           </section>
         )
       case 'Orders & Sales':
-        return <section className="admin-panel"><div className="admin-panel-heading"><div><h3>Orders & sales</h3><p>Transaction information is not connected yet.</p></div></div><div className="admin-empty-state"><strong>No live transaction data</strong><p>Connect a backend before displaying real orders, payments or revenue.</p></div></section>
+        return <AdminOrdersPanel workers={users.filter((user) => user.role === 'Delivery Man' && user.status === 'Active').map((user) => ({ id: user.id, name: user.name || user.username }))} />
       case 'Artist Verification':
         return (
           <section className="admin-panel">
@@ -1540,7 +1542,7 @@ function buildFullBackup(): FullBackup {
           </section>
         )
       case 'Delivery Management':
-        return <section className="admin-panel"><div className="admin-panel-heading"><div><h3>Delivery management</h3><p>Delivery tracking is not connected yet.</p></div></div><div className="admin-empty-state"><strong>No live delivery records</strong><p>Connect order and delivery services to manage active deliveries.</p></div></section>
+        return <AdminDeliveriesPanel />
     }
   }
 

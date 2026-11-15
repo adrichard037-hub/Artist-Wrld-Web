@@ -74,6 +74,15 @@ const navigation: Section[] = [
 
 const initialOrders: Order[] = []
 
+type ApiOrder = {
+  id: string
+  artworkTitle: string
+  total: number | string
+  status: string
+  createdAt?: string
+  buyerName?: string
+}
+
 const formatMoney = (amount: number) =>
   `GH\u20B5 ${amount.toLocaleString('en-GH', { maximumFractionDigits: 2 })}`
 
@@ -112,7 +121,45 @@ function ArtistDashboard() {
     })
   }
   const [artworks, setArtworks] = useState<Artwork[]>([])
-  const [orders] = useState<Order[]>(initialOrders)
+  const [orders, setOrders] = useState<Order[]>(initialOrders)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadOrders() {
+      try {
+        const response = await fetch(`${API_URL}/workspace/orders`, { credentials: 'include' })
+        if (!response.ok) return
+        const data = (await response.json().catch(() => ({}))) as { orders?: ApiOrder[] }
+        if (cancelled || !Array.isArray(data.orders)) return
+
+        setOrders(
+          data.orders
+            .filter((order) => order.status !== 'CANCELLED')
+            .map((order) => ({
+              id: order.id,
+              artwork: order.artworkTitle,
+              buyer: order.buyerName || 'Buyer',
+              date: order.createdAt ? order.createdAt.slice(0, 10) : '',
+              amount: Number(order.total) || 0,
+              status:
+                order.status === 'DELIVERED'
+                  ? 'Delivered'
+                  : order.status === 'SHIPPED'
+                    ? 'Shipped'
+                    : 'Processing',
+            })),
+        )
+      } catch {
+        // Keep the empty list if orders cannot be loaded right now.
+      }
+    }
+
+    void loadOrders()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const [artworkQuery, setArtworkQuery] = useState('')
   const [artworkFilter, setArtworkFilter] = useState('All')
   const [notice, setNotice] = useState('')
@@ -791,7 +838,7 @@ function ArtistDashboard() {
           <article className="artist-stat-card"><span>All listed order value</span><strong>{formatMoney(orders.reduce((sum, order) => sum + order.amount, 0))}</strong><small>Includes processing and shipped orders</small></article>
           <article className="artist-stat-card"><span>Delivered orders</span><strong>{orders.filter((order) => order.status === 'Delivered').length}</strong><small>Based on recorded orders</small></article>
         </div>
-        <section className="artist-panel"><div className="artist-panel-heading"><div><h3>Earnings summary</h3><p>Illustrative order figures, not confirmed payouts.</p></div></div><div className="artist-notice-box">Your live earnings, commission deductions and payment history will appear here once the order and payment backend is connected.</div></section>
+        <section className="artist-panel"><div className="artist-panel-heading"><div><h3>Earnings summary</h3><p>Based on your recorded orders. Payouts are not processed in this app yet.</p></div></div><div className="artist-notice-box">Orders count as earned once they are delivered. Commission deductions and payout history are not available yet.</div></section>
       </>
     )
   }
