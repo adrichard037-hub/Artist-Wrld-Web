@@ -396,7 +396,6 @@ function AdminDashboard() {
         if (!cancelled) {
           setSecurityReportUsers(data.users as SecurityReportUser[])
           setSecurityReportPepper(String(data.pepper || ''))
-          setPepperConfigured(Boolean(data.pepperConfigured))
           setSecurityReportMessage('')
         }
       } catch (error) {
