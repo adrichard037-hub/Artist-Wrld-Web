@@ -14,6 +14,7 @@ import ArtistProfile from './pages/ArtistProfile'
 import Artists from './pages/Artists'
 import About from './pages/About'
 import ScrollToTop from './components/ScrollToTop'
+import StatusPage from './pages/StatusPage'
 import { API_URL } from './lib/api'
 import './App.css'
 
@@ -1074,6 +1075,24 @@ function App() {
         <Route path="/artists" element={<Artists />} />
         <Route path="/about" element={<About />} />
         <Route path="/artists/:slug" element={<ArtistProfile />} />
+        <Route
+          path="/forgot-password"
+          element={
+            <StatusPage
+              title="Password reset is not available yet"
+              message="Please contact an Artist-Wrld administrator to recover your account."
+            />
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <StatusPage
+              title="Page not found"
+              message="The page you are looking for does not exist or has moved."
+            />
+          }
+        />
       </Routes>
     </BrowserRouter>
   )

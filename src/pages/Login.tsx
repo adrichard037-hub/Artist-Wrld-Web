@@ -49,7 +49,7 @@ function Login() {
         }),
       })
 
-      const data = await response.json() as LoginResponse
+      const data = (await response.json().catch(() => ({}))) as LoginResponse
 
       if (data.requiresEnrollment) {
         setError(data.message || 'Finish authenticator setup before signing in.')

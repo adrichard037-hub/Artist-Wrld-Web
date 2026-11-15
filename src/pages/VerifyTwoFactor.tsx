@@ -70,7 +70,7 @@ function VerifyTwoFactor() {
         body: JSON.stringify({ challengeToken, code }),
       })
 
-      const result = await response.json() as VerifyResponse
+      const result = (await response.json().catch(() => ({}))) as VerifyResponse
 
       if (!response.ok) {
         setError(result.message || 'The authenticator code was not accepted.')

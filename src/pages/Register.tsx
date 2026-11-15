@@ -57,7 +57,7 @@ function Register() {
         }),
       })
 
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
 
       if (!response.ok) {
         const fieldErrors = Array.isArray(result.errors)

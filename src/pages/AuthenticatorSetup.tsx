@@ -74,7 +74,7 @@ function AuthenticatorSetup() {
           },
         )
 
-        const result = await response.json() as SetupResponse
+        const result = (await response.json().catch(() => ({}))) as SetupResponse
 
         if (!response.ok) {
           setError(result.message || 'Unable to start authenticator setup.')
@@ -156,7 +156,7 @@ function AuthenticatorSetup() {
         },
       )
 
-      const result = await response.json() as { message?: string }
+      const result = (await response.json().catch(() => ({}))) as { message?: string }
 
       if (!response.ok) {
         setError(result.message || 'The authenticator code could not be verified.')

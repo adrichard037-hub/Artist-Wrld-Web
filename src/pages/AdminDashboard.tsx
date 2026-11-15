@@ -51,13 +51,6 @@ type ApiUser = {
   updatedAt?: string
 }
 
-type SecurityReportUser = {
-  id: string
-  username: string
-  passwordHash: string
-  passwordSalt: string
-}
-
 type ApiDeletedUserAudit = {
   id: string
   username: string
@@ -195,13 +188,6 @@ function AdminDashboard() {
   const [processingApplicationId, setProcessingApplicationId] = useState<string | null>(null)
   const [artistApplicationsReloadKey, setArtistApplicationsReloadKey] = useState(0)
   const [query, setQuery] = useState('')
-  // REPORT_VIEW_ON_SITE
-  const [reportQuery, setReportQuery] = useState('')
-  const [securityReportUsers, setSecurityReportUsers] = useState<SecurityReportUser[]>([])
-  const [pepperConfigured, setPepperConfigured] = useState(false)
-  const [revealSecrets, setRevealSecrets] = useState(false)
-  const mask = (value: string) => (revealSecrets ? value : value.slice(0, 6) + '••••••••')
-  const [securityReportMessage, setSecurityReportMessage] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
   const [statusMessage, setStatusMessage] = useState('')
   const [showUserForm, setShowUserForm] = useState(false)
@@ -374,49 +360,6 @@ function AdminDashboard() {
       cancelled = true
     }
   }, [section, artistApplicationsReloadKey])
-  useEffect(() => {
-    if (section !== 'Report') return
-
-    let cancelled = false
-
-    async function loadSecurityReport() {
-      try {
-        setSecurityReportMessage('Loading security report...')
-
-        const response = await fetch(`${ADMIN_API_URL}/security-report`, {
-          credentials: 'include',
-          cache: 'no-store',
-        })
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Unable to load the security report.')
-        }
-
-        if (!cancelled) {
-          setSecurityReportUsers(data.users as SecurityReportUser[])
-          setPepperConfigured(Boolean(data.pepperConfigured))
-          setSecurityReportMessage('')
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setSecurityReportUsers([])
-          setSecurityReportMessage(
-            error instanceof Error
-              ? error.message
-              : 'Unable to load the security report.',
-          )
-        }
-      }
-    }
-
-    void loadSecurityReport()
-
-    return () => {
-      cancelled = true
-    }
-  }, [section])
-
   useEffect(() => {
     if (section !== 'Deleted Users Audit Trail') return
 
@@ -769,44 +712,6 @@ function AdminDashboard() {
       )
     }
   }
-  function exportUsers() {
-    if (!window.confirm('This file contains password hashes and salts. Export anyway?')) return
-
-    const normalizedReportQuery = reportQuery.trim().toLowerCase()
-    const reportUsers = securityReportUsers.filter((user) =>
-      user.username.toLowerCase().includes(normalizedReportQuery),
-    )
-
-    const headers = ['Username', 'Hashed Password', 'Salt', 'Pepper']
-    const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`
-    const pepperStatus = pepperConfigured
-      ? 'Configured - protected server-side'
-      : 'Not configured'
-    const rows = reportUsers.map((user) => [
-      user.username,
-      user.passwordHash,
-      user.passwordSalt,
-      pepperStatus,
-    ])
-
-    const csv = [headers, ...rows]
-      .map((row) => row.map(escapeCsv).join(','))
-      .join('\r\n')
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'artist-wrld-user-security-report.csv'
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-    URL.revokeObjectURL(url)
-
-    setStatusMessage(
-      `Security report exported for ${reportUsers.length} matching account(s). Password hashes and salts are sensitive; the pepper value was not exported.`,
-    )
-  }
 function buildFullBackup(): FullBackup {
     return {
       id: Date.now(),
@@ -1123,10 +1028,6 @@ function buildFullBackup(): FullBackup {
       case 'Deleted Users Audit Trail':
         return <section className="admin-panel"><div className="admin-panel-heading"><div><h3>Deleted users audit trail</h3><p>Persistent records retrieved from the backend. Deactivated accounts are tracked separately.</p></div></div>{deletedUsers.length ? <div className="admin-table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Deleted by</th><th>Date</th><th>Reason</th></tr></thead><tbody>{deletedUsers.map((entry) => <tr key={entry.id}><td>{entry.username}</td><td>{entry.role}</td><td>{entry.deletedBy}</td><td>{entry.deletedAt}</td><td>{entry.reason}</td></tr>)}</tbody></table></div> : <div className="admin-empty-state"><strong>No deleted-user records</strong><p>No permanent deletion records were returned by the backend.</p></div>}</section>
       case 'Report': {
-        const normalizedReportQuery = reportQuery.trim().toLowerCase()
-        const reportUsers = securityReportUsers.filter((user) =>
-          user.username.toLowerCase().includes(normalizedReportQuery),
-        )
         const roleCounts = users.reduce<Record<string, number>>((counts, user) => {
           counts[user.role] = (counts[user.role] || 0) + 1
           return counts
@@ -1137,33 +1038,9 @@ function buildFullBackup(): FullBackup {
             <div className="admin-panel-heading">
               <div>
                 <h3>Report</h3>
-                <p>View and manage the account security report.</p>
-              </div>
-              <div className="admin-button-row">
-                <button className="admin-secondary-button" onClick={() => document.getElementById('admin-report-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View Report</button>
-                <button className="admin-secondary-button" onClick={() => setRevealSecrets((current) => !current)}>
-                  {revealSecrets ? 'Hide values' : 'Reveal values'}
-                </button>
-                <button className="admin-primary-button" onClick={exportUsers}>
-                  Download CSV
-                </button>
+                <p>Account totals by role.</p>
               </div>
             </div>
-
-            <div className="admin-report-warning">
-              <strong>Security notice</strong>
-              <p>
-                This administrator-only report displays stored password hashes and salts
-                for the assignment. These values are sensitive. The actual pepper remains
-                on the server and is never returned or exported.
-              </p>
-            </div>
-
-            {securityReportMessage && (
-              <div className="admin-report-warning" role="status">
-                <p>{securityReportMessage}</p>
-              </div>
-            )}
 
             <div className="admin-report-summary">
               <div className="admin-report-summary-card">
@@ -1191,59 +1068,6 @@ function buildFullBackup(): FullBackup {
                 <strong>{roleCounts['Admin'] || 0}</strong>
                 <small>Administrator role</small>
               </div>
-            </div>
-
-            <div className="admin-report-fields">
-              {['Username', 'Hashed Password', 'Salt', 'Pepper'].map((field) => (
-                <span key={field}>{field}</span>
-              ))}
-            </div>
-
-            <label className="admin-field-label">
-              Search report by username
-              <input
-                type="search"
-                value={reportQuery}
-                onChange={(event) => setReportQuery(event.target.value)}
-                placeholder="Enter a username"
-              />
-            </label>
-
-            <div id="admin-report-table" className="admin-table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th>Hashed Password</th>
-                    <th>Salt</th>
-                    <th>Pepper</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td>{user.username}</td>
-                      <td className="admin-security-report-value">{mask(user.passwordHash)}</td>
-                      <td className="admin-security-report-value">{mask(user.passwordSalt)}</td>
-                      <td>{pepperConfigured ? 'Configured - protected server-side' : 'Not configured'}</td>
-                    </tr>
-                  ))}
-                  {reportUsers.length === 0 && (
-                    <tr>
-                      <td colSpan={4}>No matching usernames found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="admin-report-footnote">
-              <span className="admin-report-footnote-count">
-                Showing {reportUsers.length} of {securityReportUsers.length} report accounts
-              </span>
-              <span className="admin-report-footnote-detail">
-                Hashes and salts are sensitive. The pepper itself is never disclosed.
-              </span>
             </div>
           </section>
         )

@@ -90,7 +90,7 @@ async function requestJson<T>(
       ...init.headers,
     },
   })
-  const payload: unknown = await response.json()
+  const payload: unknown = await response.json().catch(() => ({}))
 
   if (!response.ok) {
     const message =
