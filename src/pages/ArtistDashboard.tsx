@@ -83,6 +83,10 @@ type ApiOrder = {
   buyerName?: string
 }
 
+// Adds money in whole pesewas so decimal fractions never drift.
+const sumMoney = (amounts: number[]) =>
+  amounts.reduce((sum, amount) => sum + Math.round(amount * 100), 0) / 100
+
 const formatMoney = (amount: number) =>
   `GH\u20B5 ${amount.toLocaleString('en-GH', { maximumFractionDigits: 2 })}`
 
@@ -471,9 +475,9 @@ function ArtistDashboard() {
   const totalViews = artworks.reduce((sum, artwork) => sum + artwork.views, 0)
   const totalSales = artworks.reduce((sum, artwork) => sum + artwork.sales, 0)
   const pendingOrders = orders.filter((order) => order.status === 'Processing').length
-  const completedRevenue = orders
-    .filter((order) => order.status === 'Delivered')
-    .reduce((sum, order) => sum + order.amount, 0)
+  const completedRevenue = sumMoney(
+    orders.filter((order) => order.status === 'Delivered').map((order) => order.amount),
+  )
 
   async function addArtwork(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -835,7 +839,7 @@ function ArtistDashboard() {
       <>
         <div className="artist-stat-grid artist-earnings-stats">
           <article className="artist-stat-card"><span>Delivered order value</span><strong>{formatMoney(completedRevenue)}</strong><small>Value of delivered orders</small></article>
-          <article className="artist-stat-card"><span>All listed order value</span><strong>{formatMoney(orders.reduce((sum, order) => sum + order.amount, 0))}</strong><small>Includes processing and shipped orders</small></article>
+          <article className="artist-stat-card"><span>All listed order value</span><strong>{formatMoney(sumMoney(orders.map((order) => order.amount)))}</strong><small>Includes processing and shipped orders</small></article>
           <article className="artist-stat-card"><span>Delivered orders</span><strong>{orders.filter((order) => order.status === 'Delivered').length}</strong><small>Based on recorded orders</small></article>
         </div>
         <section className="artist-panel"><div className="artist-panel-heading"><div><h3>Earnings summary</h3><p>Based on your recorded orders. Payouts are not processed in this app yet.</p></div></div><div className="artist-notice-box">Orders count as earned once they are delivered. Commission deductions and payout history are not available yet.</div></section>
