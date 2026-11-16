@@ -173,8 +173,8 @@ function AdminDashboard() {
     })
   }
   const [users, setUsers] = useState<User[]>([])
-  const [backendStatus, setBackendStatus] = useState<'Checkingâ€¦' | 'Connected' | 'Unavailable'>('Checkingâ€¦')
-  const [persistenceStatus, setPersistenceStatus] = useState<'Checkingâ€¦' | 'Database-backed' | 'Unavailable'>('Checkingâ€¦')
+  const [backendStatus, setBackendStatus] = useState<'Checking…' | 'Connected' | 'Unavailable'>('Checking…')
+  const [persistenceStatus, setPersistenceStatus] = useState<'Checking…' | 'Database-backed' | 'Unavailable'>('Checking…')
   const [adminArtworks, setAdminArtworks] = useState<AdminArtwork[]>([])
   const [artworksLoading, setArtworksLoading] = useState(false)
   const [artworksMessage, setArtworksMessage] = useState('')
@@ -202,7 +202,7 @@ function AdminDashboard() {
   const [securityReportUsers, setSecurityReportUsers] = useState<SecurityReportUser[]>([])
   const [securityReportPepper, setSecurityReportPepper] = useState('')
   const [revealSecrets, setRevealSecrets] = useState(true)
-  const mask = (value: string) => (revealSecrets ? value : value.slice(0, 6) + 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢')
+  const mask = (value: string) => (revealSecrets ? value : value.slice(0, 6) + '••••••••')
   const [securityReportMessage, setSecurityReportMessage] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
   const [statusMessage, setStatusMessage] = useState('')
@@ -957,7 +957,7 @@ function buildFullBackup(): FullBackup {
             <div className="admin-panel-heading">
               <div>
                 <h3>Platform status</h3>
-                <p>{backendStatus === 'Connected' ? 'Backend server responded' : backendStatus === 'Checkingâ€¦' ? 'Checking the backend connection' : 'Backend connection could not be reached'}</p>
+                <p>{backendStatus === 'Connected' ? 'Backend server responded' : backendStatus === 'Checking…' ? 'Checking the backend connection' : 'Backend connection could not be reached'}</p>
               </div>
             </div>
             <div className="admin-status-row">
@@ -976,7 +976,7 @@ function buildFullBackup(): FullBackup {
         </div>
 
         <section className="admin-panel">
-          <div className="admin-panel-heading"><div><h3>Recently registered users</h3><p>{persistenceStatus === 'Database-backed' ? 'Accounts loaded from the backend database' : persistenceStatus === 'Checkingâ€¦' ? 'Loading registered accountsâ€¦' : 'Live account data is currently unavailable'}</p></div><button className="admin-text-button" onClick={() => setSection('User Management')}>View all</button></div>
+          <div className="admin-panel-heading"><div><h3>Recently registered users</h3><p>{persistenceStatus === 'Database-backed' ? 'Accounts loaded from the backend database' : persistenceStatus === 'Checking…' ? 'Loading registered accounts…' : 'Live account data is currently unavailable'}</p></div><button className="admin-text-button" onClick={() => setSection('User Management')}>View all</button></div>
           <UserTable users={users.slice(-4).reverse()} onEdit={openEditUser} onDelete={deleteUser} onPermanentlyDelete={permanentlyDeleteUser} />
         </section>
       </>
@@ -1101,7 +1101,7 @@ function buildFullBackup(): FullBackup {
                         <td>@{entry.username}</td>
                         <td>{entry.role.replace(/_/g, ' ')}</td>
                         <td>{entry.action.replace(/_/g, ' ').toLowerCase()}</td>
-                        <td>{entry.details || 'â€”'}</td>
+                        <td>{entry.details || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1246,7 +1246,7 @@ function buildFullBackup(): FullBackup {
           </section>
         )
       }      case 'Settings':
-        return <><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Configuration settings</h3><p>Adjust demonstration settings for Artist-Wrld.</p></div></div><div className="admin-settings-form"><label>Website name<input value={siteName} onChange={(event) => setSiteName(event.target.value)} /></label><label>Marketplace commission (%)<input type="number" min="0" max="100" value={commission} onChange={(event) => setCommission(event.target.value)} /></label><label>Interface theme<select value={theme} onChange={(event) => setTheme(event.target.value)}><option>Light</option><option>Dark</option><option>System</option></select></label><label className="admin-toggle-setting"><span><strong>Allow new registrations</strong><small>Controls the demonstration setting only.</small></span><input type="checkbox" checked={registrationEnabled} onChange={(event) => setRegistrationEnabled(event.target.checked)} /></label><button className="admin-primary-button" onClick={() => setStatusMessage('Settings updated in this demonstration session.')}>Save settings</button></div></section><div className="admin-backup-grid"><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Full Application Backup</h3><p>Captures all available application data and current configuration settings.</p></div></div><div className="admin-report-warning"><strong>Complete Available Data</strong><p>The backup includes available user accounts, deleted-user audit entries and configuration settings. Unconnected artwork, orders, sales, verification and delivery records are clearly identified.</p></div><div className="admin-button-row"><button className="admin-primary-button" onClick={createBackup}>Create Full Backup</button><button className="admin-secondary-button" onClick={downloadConfiguration}>Download Full Backup</button></div>{backups.length > 0 && <div className="admin-backup-list"><h4>Session snapshots</h4>{backups.map((backup) => <div key={backup.id}>{new Date(backup.createdAt).toLocaleString()} <span>Users: {backup.users.length} Â· Audit entries: {backup.deletedUsers.length}</span></div>)}</div>}</section><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Restore from Backup</h3><p>Recover missing data while protecting existing records and newer information.</p></div></div><label className="admin-field-label">Select Backup to Restore<select value={selectedBackup} onChange={(event) => setSelectedBackup(event.target.value)}><option value="">Select a snapshot</option>{backups.map((backup) => <option value={backup.id} key={backup.id}>{backup.createdAt}</option>)}</select></label><button className="admin-primary-button" onClick={restoreConfiguration} disabled={!selectedBackup}>Restore Backup</button></section></div></>
+        return <><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Configuration settings</h3><p>Adjust demonstration settings for Artist-Wrld.</p></div></div><div className="admin-settings-form"><label>Website name<input value={siteName} onChange={(event) => setSiteName(event.target.value)} /></label><label>Marketplace commission (%)<input type="number" min="0" max="100" value={commission} onChange={(event) => setCommission(event.target.value)} /></label><label>Interface theme<select value={theme} onChange={(event) => setTheme(event.target.value)}><option>Light</option><option>Dark</option><option>System</option></select></label><label className="admin-toggle-setting"><span><strong>Allow new registrations</strong><small>Controls the demonstration setting only.</small></span><input type="checkbox" checked={registrationEnabled} onChange={(event) => setRegistrationEnabled(event.target.checked)} /></label><button className="admin-primary-button" onClick={() => setStatusMessage('Settings updated in this demonstration session.')}>Save settings</button></div></section><div className="admin-backup-grid"><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Full Application Backup</h3><p>Captures all available application data and current configuration settings.</p></div></div><div className="admin-report-warning"><strong>Complete Available Data</strong><p>The backup includes available user accounts, deleted-user audit entries and configuration settings. Unconnected artwork, orders, sales, verification and delivery records are clearly identified.</p></div><div className="admin-button-row"><button className="admin-primary-button" onClick={createBackup}>Create Full Backup</button><button className="admin-secondary-button" onClick={downloadConfiguration}>Download Full Backup</button></div>{backups.length > 0 && <div className="admin-backup-list"><h4>Session snapshots</h4>{backups.map((backup) => <div key={backup.id}>{new Date(backup.createdAt).toLocaleString()} <span>Users: {backup.users.length} · Audit entries: {backup.deletedUsers.length}</span></div>)}</div>}</section><section className="admin-panel"><div className="admin-panel-heading"><div><h3>Restore from Backup</h3><p>Recover missing data while protecting existing records and newer information.</p></div></div><label className="admin-field-label">Select Backup to Restore<select value={selectedBackup} onChange={(event) => setSelectedBackup(event.target.value)}><option value="">Select a snapshot</option>{backups.map((backup) => <option value={backup.id} key={backup.id}>{backup.createdAt}</option>)}</select></label><button className="admin-primary-button" onClick={restoreConfiguration} disabled={!selectedBackup}>Restore Backup</button></section></div></>
       case 'Artwork Management':
         return (
           <section className="admin-panel">
@@ -1313,11 +1313,11 @@ function buildFullBackup(): FullBackup {
                   const artist = users.find((user) => user.id === artwork.artistId)
                   const numericPrice = Number(artwork.price)
                   const formattedPrice = Number.isFinite(numericPrice)
-                    ? `GHâ‚µ ${numericPrice.toLocaleString('en-GH', {
+                    ? `GH₵ ${numericPrice.toLocaleString('en-GH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}`
-                    : `GHâ‚µ ${artwork.price}`
+                    : `GH₵ ${artwork.price}`
 
                   return (
                     <article className="admin-artwork-card" key={artwork.id}>
