@@ -1065,6 +1065,11 @@ function BuyerDashboard() {
     }
   }
 
+  // Messages sent to this buyer that have not been opened yet.
+  const unreadMessageCount = messages.filter(
+    (message) => message.recipientId === userId && !message.readAt,
+  ).length
+
   return (
     <main className="buyer-dashboard" data-theme={theme.toLowerCase()}>
       <aside className="buyer-sidebar">
@@ -1103,6 +1108,8 @@ function BuyerDashboard() {
               </span>
               <span>{item}</span>
               {item === 'Wishlist' && wishlist.length > 0 && <small>{wishlist.length}</small>}
+              {item === 'My Orders' && orders.length > 0 && <small>{orders.length}</small>}
+              {item === 'Messages' && unreadMessageCount > 0 && <small>{unreadMessageCount}</small>}
             </button>
           ))}
         </nav>

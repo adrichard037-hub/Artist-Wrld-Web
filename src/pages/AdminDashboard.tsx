@@ -29,6 +29,28 @@ type DeletedUserAudit = {
 
 const ADMIN_API_URL = `${API_URL}/admin`
 
+type NavCounts = {
+  orders: number
+  deliveries: number
+  pendingArtistApplications: number
+}
+
+// Small green count shown beside a sidebar item, like the buyer's Wishlist.
+const navBadgeStyle = {
+  marginLeft: 'auto',
+  minWidth: 20,
+  height: 20,
+  padding: '0 6px',
+  borderRadius: 999,
+  background: '#d9f5e0',
+  color: '#1d5c33',
+  fontSize: 11,
+  fontWeight: 700,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+} as const
+
 type AdminArtwork = {
   id: string
   artistId: string
@@ -206,6 +228,46 @@ function AdminDashboard() {
   const [securityReportMessage, setSecurityReportMessage] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
   const [statusMessage, setStatusMessage] = useState('')
+  const [navCounts, setNavCounts] = useState<NavCounts>({
+    orders: 0,
+    deliveries: 0,
+    pendingArtistApplications: 0,
+  })
+
+  // Refresh the sidebar numbers on load and whenever another section opens.
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadNavCounts() {
+      try {
+        const response = await fetch(`${ADMIN_API_URL}/nav-counts`, { credentials: 'include' })
+        if (!response.ok) return
+        const data = (await response.json().catch(() => ({}))) as Partial<NavCounts>
+        if (cancelled) return
+        setNavCounts({
+          orders: Number(data.orders) || 0,
+          deliveries: Number(data.deliveries) || 0,
+          pendingArtistApplications: Number(data.pendingArtistApplications) || 0,
+        })
+      } catch {
+        // The badges are optional, so a failed request just leaves them empty.
+      }
+    }
+
+    void loadNavCounts()
+    return () => {
+      cancelled = true
+    }
+  }, [section])
+
+  const navBadgeCount = (item: string) =>
+    item === 'Orders & Sales'
+      ? navCounts.orders
+      : item === 'Delivery Management'
+        ? navCounts.deliveries
+        : item === 'Artist Verification'
+          ? navCounts.pendingArtistApplications
+          : 0
   const [showUserForm, setShowUserForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -1571,6 +1633,11 @@ function buildFullBackup(): FullBackup {
                 ][index]}
               </span>
               <span className="admin-nav-text">{item}</span>
+              {navBadgeCount(item) > 0 && (
+                <span style={navBadgeStyle} aria-label={`${navBadgeCount(item)} items`}>
+                  {navBadgeCount(item)}
+                </span>
+              )}
             </button>
           ))}
           <span className="admin-nav-label">SECURITY & SETTINGS</span>
