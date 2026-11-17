@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_URL } from '../lib/api'
 import './AdminDashboard.css'
+import AvailabilityBadge from '../components/AvailabilityBadge'
 import AdminOrdersPanel from './AdminOrdersPanel'
 import AdminDeliveriesPanel from './AdminDeliveriesPanel'
 
@@ -62,6 +63,7 @@ type AdminArtwork = {
   status: string
   createdAt: string
   updatedAt: string
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 type ApiUser = {
@@ -1401,6 +1403,7 @@ function buildFullBackup(): FullBackup {
                       <div className="admin-artwork-details">
                         <div className="admin-artwork-title-row">
                           <h4>{artwork.title}</h4>
+                          <AvailabilityBadge availability={artwork.availability} />
                           <span
                             className={`admin-badge ${
                               artwork.status === 'Published' ? 'good' : 'pending'

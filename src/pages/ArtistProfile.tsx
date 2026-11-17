@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
 import { API_URL } from '../lib/api'
 import './ArtistProfile.css'
+import AvailabilityBadge from '../components/AvailabilityBadge'
 
 type Artist = {
   id: string
@@ -22,6 +23,7 @@ type ArtistArtwork = {
   price: number
   image: string | null
   createdAt: string
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 function ArtistProfile() {
@@ -200,6 +202,7 @@ function ArtistProfile() {
                   <div className="artist-profile-artwork-info">
                     <div>
                       <h3>{artwork.title}</h3>
+                      <AvailabilityBadge availability={artwork.availability} />
                       <p>{artwork.category}</p>
                     </div>
                     <span className="artist-profile-price">{`${String.fromCharCode(8373)} ${artwork.price.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>

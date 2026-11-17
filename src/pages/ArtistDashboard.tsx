@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_URL } from '../lib/api'
 import './ArtistDashboard.css'
+import AvailabilityBadge from '../components/AvailabilityBadge'
 
 type Artwork = {
   id: string
@@ -14,6 +15,7 @@ type Artwork = {
   sales: number
   description?: string | null
   image?: string | null
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 type ApiArtwork = {
@@ -26,6 +28,7 @@ type ApiArtwork = {
   sales?: number
   description?: string | null
   image?: string | null
+  availability?: string
 }
 
 function mapApiArtwork(item: ApiArtwork): Artwork {
@@ -39,6 +42,8 @@ function mapApiArtwork(item: ApiArtwork): Artwork {
     sales: Number(item.sales ?? 0),
     description: item.description ?? null,
     image: item.image ?? null,
+    availability:
+      item.availability === 'SOLD' || item.availability === 'RESERVED' ? item.availability : 'AVAILABLE',
   }
 }
 
@@ -681,6 +686,7 @@ function ArtistDashboard() {
                 </div>
                 <div className="artist-row-main">
                   <strong>{artwork.title}</strong>
+                  <AvailabilityBadge availability={artwork.availability} />
                   <span>{artwork.category}</span>
                 </div>
                 <div className="artist-row-end">
@@ -743,7 +749,7 @@ function ArtistDashboard() {
               <thead><tr><th>Artwork</th><th>Category</th><th>Price</th><th>Views</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>{filteredArtworks.length === 0 ? <tr><td colSpan={6}>No artworks to display yet. Add your first artwork to get started.</td></tr> : filteredArtworks.map((artwork) => (
                   <tr key={artwork.id}>
-                    <td><strong>{artwork.title}</strong><small>ID: AW-{String(artwork.id).padStart(4, '0')}</small></td>
+                    <td><strong>{artwork.title}</strong><AvailabilityBadge availability={artwork.availability} /><small>ID: AW-{String(artwork.id).padStart(4, '0')}</small></td>
                     <td>{artwork.category}</td>
                     <td>{formatMoney(artwork.price)}</td>
                     <td>{artwork.views}</td>

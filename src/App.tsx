@@ -18,6 +18,7 @@ import StatusPage from './pages/StatusPage'
 import { API_URL } from './lib/api'
 import { readPublicAccountCache, savePublicAccountCache, clearPublicAccountCache } from './lib/public-account-cache'
 import './App.css'
+import AvailabilityBadge from './components/AvailabilityBadge'
 
 type HomepageRole = 'ADMIN' | 'ARTIST' | 'BUYER'
 
@@ -53,6 +54,7 @@ type Artwork = {
   category: string
   price: number
   image: string | null
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 function HomePage() {
@@ -622,6 +624,7 @@ function HomePage() {
                 <div className="artwork-info">
                   <div>
                     <h3>{artwork.title}</h3>
+                    <AvailabilityBadge availability={artwork.availability} />
                     <p>By {artwork.artist}</p>
                   </div>
                   <strong>{new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', maximumFractionDigits: 2 }).format(artwork.price)}</strong>

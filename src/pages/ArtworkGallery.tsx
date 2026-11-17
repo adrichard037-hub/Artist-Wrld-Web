@@ -3,6 +3,7 @@ import { Link, NavLink, useSearchParams } from 'react-router-dom'
 import PublicAccountActions from '../components/PublicAccountActions'
 import { API_URL } from '../lib/api'
 import './ArtworkGallery.css'
+import AvailabilityBadge from '../components/AvailabilityBadge'
 
 type Artwork = {
   id: string
@@ -11,6 +12,7 @@ type Artwork = {
   category: string
   price: number
   image: string | null
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 const categories = ['All', 'Paintings', 'Photography', 'Abstract', 'Sculpture', 'More']
@@ -258,6 +260,7 @@ function ArtworkGallery() {
                           {artwork.title}
                         </Link>
                       </h3>
+                      <AvailabilityBadge availability={artwork.availability} />
                       <p>By {artwork.artist}</p>
                     </div>
                     <strong>

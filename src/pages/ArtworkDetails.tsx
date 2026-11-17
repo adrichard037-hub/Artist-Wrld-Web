@@ -12,6 +12,7 @@ type Artwork = {
   price: number
   image: string | null
   description: string | null
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 function ArtworkDetails() {
@@ -109,6 +110,7 @@ function ArtworkDetails() {
 
   function addToCart() {
     if (!artwork) return
+    if (artwork.availability === 'SOLD' || artwork.availability === 'RESERVED') return
 
     const existingCart = JSON.parse(
       localStorage.getItem('artistWrldCart') || '[]',
@@ -206,7 +208,11 @@ function ArtworkDetails() {
             <div className="artwork-detail-row">
               <span>Availability</span>
               <strong className="artwork-availability">
-                Available to explore
+                {artwork.availability === 'SOLD'
+                  ? 'Sold'
+                  : artwork.availability === 'RESERVED'
+                    ? 'Reserved - awaiting payment'
+                    : 'Available'}
               </strong>
             </div>
 
@@ -215,8 +221,13 @@ function ArtworkDetails() {
                 type="button"
                 className="artwork-button artwork-button-dark artwork-add-cart"
                 onClick={addToCart}
+                disabled={artwork.availability === 'SOLD' || artwork.availability === 'RESERVED'}
               >
-                Add to Cart
+                {artwork.availability === 'SOLD'
+                  ? 'Sold'
+                  : artwork.availability === 'RESERVED'
+                    ? 'Reserved'
+                    : 'Add to Cart'}
               </button>
 
               <button

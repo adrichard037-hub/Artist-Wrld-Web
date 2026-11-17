@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent 
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE_URL } from '../lib/api'
 import './BuyerDashboard.css'
+import AvailabilityBadge from '../components/AvailabilityBadge'
 
 type Section =
   | 'Overview'
@@ -24,6 +25,7 @@ type Artwork = {
   price: number
   image: string | null
   description?: string | null
+  availability?: 'AVAILABLE' | 'RESERVED' | 'SOLD'
 }
 
 type BuyerOrder = {
@@ -510,18 +512,29 @@ function BuyerDashboard() {
               <p>by {artwork.artist}</p>
               <div className="buyer-art-bottom">
                 <strong>{formatMoney(artwork.price)}</strong>
+                <AvailabilityBadge availability={artwork.availability} />
                 <div className="buyer-card-actions">
                   <Link to="/artworks" className="buyer-view-link">View art</Link>
                   <button
                     type="button"
                     className="buyer-view-link"
+                    disabled={artwork.availability === 'SOLD' || artwork.availability === 'RESERVED'}
+                    style={
+                      artwork.availability === 'SOLD' || artwork.availability === 'RESERVED'
+                        ? { opacity: 0.55, cursor: 'not-allowed' }
+                        : undefined
+                    }
                     onClick={() => {
                       setSelectedArtwork(artwork)
                       setShippingAddress('')
                       setSection('Explore Art')
                     }}
                   >
-                    Request order
+                    {artwork.availability === 'SOLD'
+                      ? 'Sold'
+                      : artwork.availability === 'RESERVED'
+                        ? 'Reserved'
+                        : 'Request order'}
                   </button>
                 </div>
               </div>
@@ -647,6 +660,12 @@ function BuyerDashboard() {
       }
       const createdOrder = result.order
       setOrders((current) => [createdOrder, ...current])
+      // The original is now reserved for this buyer, so show it as taken straight away.
+      setArtworks((current) =>
+        current.map((item) =>
+          item.id === createdOrder.artworkId ? { ...item, availability: 'RESERVED' } : item,
+        ),
+      )
       setSelectedArtwork(null)
       setShippingAddress('')
       setNotice(result.message || 'Your order was created. Payment has not been confirmed.')
