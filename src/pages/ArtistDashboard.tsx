@@ -176,6 +176,8 @@ function ArtistDashboard() {
   const [notice, setNotice] = useState('')
   const [artistName, setArtistName] = useState('')
   const [accountDisplayName, setAccountDisplayName] = useState('')
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean | null>(null)
+  const [approvalStatus, setApprovalStatus] = useState('')
   const [artistBio, setArtistBio] = useState('')
   const [artistLocation, setArtistLocation] = useState('')
   const [email, setEmail] = useState('')
@@ -220,6 +222,12 @@ function ArtistDashboard() {
       );
 
       if (typeof user?.email === "string") setEmail(user.email);
+      if (typeof user?.twoFactorEnabled === "boolean") {
+        setTwoFactorEnabled(user.twoFactorEnabled);
+      }
+      if (typeof user?.artistApprovalStatus === "string") {
+        setApprovalStatus(user.artistApprovalStatus);
+      }
       if (typeof profile?.bio === "string") setArtistBio(profile.bio);
       if (typeof profile?.location === "string") {
         setArtistLocation(profile.location);
@@ -1052,25 +1060,51 @@ function ArtistDashboard() {
           <div className="artist-settings-row">
             <div>
               <strong>Order updates</strong>
-              <p>Receive notifications when an order changes status.</p>
+              <p>
+                {pendingOrders === 0
+                  ? 'No orders are waiting for action. '
+                  : `${pendingOrders} order${pendingOrders === 1 ? ' is' : 's are'} in progress. `}
+                Status changes appear in Orders and on the sidebar badge. Email and text alerts are not available yet.
+              </p>
             </div>
-            <span className="artist-status is-draft">Backend required</span>
+            <span className="artist-status is-live">In-app</span>
           </div>
 
           <div className="artist-settings-row">
             <div>
               <strong>Account security</strong>
-              <p>Password changes and sign-in security must be managed by the authentication service.</p>
+              <p>
+                Sign-in needs your password and a code from your authenticator app. Passwords are stored only as
+                salted and peppered hashes, and your session cookie is protected from scripts.
+              </p>
             </div>
-            <span className="artist-status is-draft">Not connected</span>
+            <span className={`artist-status ${twoFactorEnabled ? 'is-live' : 'is-draft'}`}>
+              {twoFactorEnabled === null ? 'Checking' : twoFactorEnabled ? '2FA on' : '2FA off'}
+            </span>
           </div>
 
           <div className="artist-settings-row">
             <div>
               <strong>Marketplace visibility</strong>
-              <p>Marketplace publishing will be available when your account is connected to the backend.</p>
+              <p>
+                {approvalStatus === 'APPROVED'
+                  ? `You are approved to publish. ${publishedCount} published and ${artworks.filter((artwork) => artwork.status === 'Draft').length} in drafts.`
+                  : approvalStatus === 'PENDING'
+                    ? 'Your artist application is waiting for administrator approval. You can prepare drafts, and publishing starts once you are approved.'
+                    : approvalStatus === 'REJECTED'
+                      ? 'Your artist application was not approved. Please contact an administrator.'
+                      : 'Checking your approval status.'}
+              </p>
             </div>
-            <span className="artist-status">Not connected</span>
+            <span className={`artist-status ${approvalStatus === 'APPROVED' ? 'is-live' : 'is-draft'}`}>
+              {approvalStatus === 'APPROVED'
+                ? 'Approved'
+                : approvalStatus === 'PENDING'
+                  ? 'Pending approval'
+                  : approvalStatus === 'REJECTED'
+                    ? 'Not approved'
+                    : 'Checking'}
+            </span>
           </div>
         </section>
 
