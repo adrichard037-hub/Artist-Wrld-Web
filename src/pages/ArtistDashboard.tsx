@@ -53,7 +53,7 @@ type Order = {
   buyer: string
   date: string
   amount: number
-  status: 'Processing' | 'Shipped' | 'Delivered'
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered'
 }
 
 type Section =
@@ -156,7 +156,9 @@ function ArtistDashboard() {
                   ? 'Delivered'
                   : order.status === 'SHIPPED'
                     ? 'Shipped'
-                    : 'Processing',
+                    : order.status === 'PENDING'
+                      ? 'Pending'
+                      : 'Processing',
             })),
         )
       } catch {
@@ -478,8 +480,13 @@ function ArtistDashboard() {
 
   const publishedCount = artworks.filter((artwork) => artwork.status === 'Published').length
   const totalViews = artworks.reduce((sum, artwork) => sum + artwork.views, 0)
-  const totalSales = artworks.reduce((sum, artwork) => sum + artwork.sales, 0)
-  const pendingOrders = orders.filter((order) => order.status === 'Processing').length
+  // An order counts as a sale once it is paid (any status after Pending).
+  const paidOrders = orders.filter((order) => order.status !== 'Pending')
+  const itemsSold = paidOrders.length
+  const salesValue = sumMoney(paidOrders.map((order) => order.amount))
+  const pendingOrders = orders.filter(
+    (order) => order.status === 'Pending' || order.status === 'Processing',
+  ).length
   const completedRevenue = sumMoney(
     orders.filter((order) => order.status === 'Delivered').map((order) => order.amount),
   )
@@ -654,13 +661,13 @@ function ArtistDashboard() {
           </article>
           <article className="artist-stat-card">
             <span>Items sold</span>
-            <strong>{totalSales}</strong>
-            <small>Based on recorded artwork sales</small>
+            <strong>{itemsSold}</strong>
+            <small>Paid orders for your artworks</small>
           </article>
           <article className="artist-stat-card">
-            <span>Delivered order value</span>
-            <strong>{formatMoney(completedRevenue)}</strong>
-            <small>Calculated from recorded orders</small>
+            <span>Sales value</span>
+            <strong>{formatMoney(salesValue)}</strong>
+            <small>Paid orders, including those still being delivered</small>
           </article>
         </div>
 
@@ -845,7 +852,7 @@ function ArtistDashboard() {
       <>
         <div className="artist-stat-grid artist-earnings-stats">
           <article className="artist-stat-card"><span>Delivered order value</span><strong>{formatMoney(completedRevenue)}</strong><small>Value of delivered orders</small></article>
-          <article className="artist-stat-card"><span>All listed order value</span><strong>{formatMoney(sumMoney(orders.map((order) => order.amount)))}</strong><small>Includes processing and shipped orders</small></article>
+          <article className="artist-stat-card"><span>Sales value (paid)</span><strong>{formatMoney(salesValue)}</strong><small>Includes processing and shipped orders</small></article>
           <article className="artist-stat-card"><span>Delivered orders</span><strong>{orders.filter((order) => order.status === 'Delivered').length}</strong><small>Based on recorded orders</small></article>
         </div>
         <section className="artist-panel"><div className="artist-panel-heading"><div><h3>Earnings summary</h3><p>Based on your recorded orders. Payouts are not processed in this app yet.</p></div></div><div className="artist-notice-box">Orders count as earned once they are delivered. Commission deductions and payout history are not available yet.</div></section>
